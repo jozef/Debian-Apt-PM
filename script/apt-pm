@@ -1,0 +1,69 @@
+#!/usr/bin/perl
+
+=head1 NAME
+
+apt-pm - locate Perl Modules in Debian repositories
+
+=head1 SYNOPSIS
+
+	apt-pm search Moose::Meta::Role
+	apt-pm update
+
+=head1 DESCRIPTION
+
+Lookup Perl package in Debian .deb files.
+
+=cut
+
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use Pod::Usage;
+use Debian::Apt::PM;
+use List::MoreUtils 'none';
+
+exit main();
+
+sub main {
+	my $help;
+	my $sources;
+	GetOptions(
+		'help|h'      => \$help,
+		'sources|s=s' => \$sources,
+	) or pod2usage;
+	pod2usage if $help;
+	
+	my $cmd     = shift @ARGV;
+	my $package = shift @ARGV;
+	pod2usage if not $cmd;
+	pod2usage if none { $_ eq $cmd } qw(search find update);
+	
+	my $aptpm = Debian::Apt::PM->new();
+	$aptpm->sources([split(',', $sources)])
+		if ($sources);
+	
+	# get provides from dbedia.com
+	if ($cmd eq 'update') {
+		$aptpm->update();
+	}
+
+	# lookup the package
+	if (($cmd eq 'search') or ($cmd eq 'find')) {
+		pod2usage if not $package;
+		
+		# get provides hash with packages
+		my $version_info = $aptpm->find($package);
+		
+		# nothing to do if the package is not there
+		return 0 if not $version_info;
+		
+		# print all available versions
+		foreach my $version (keys %{$version_info}) {
+			print $version_info->{$version}->{'package'}, '_', $version_info->{$version}->{'version'}, ': ', $package, ' ', $version, "\n";
+		}
+	}
+	
+	return 0;
+}

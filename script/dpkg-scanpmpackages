@@ -1,0 +1,197 @@
+#!/usr/bin/perl
+
+=head1 NAME
+
+dpkg-scanpmpackages - creates PerlPackages index from .deb files
+
+=head1 SYNOPSIS
+
+	reprepro-update-perl-packages [repository_folder]
+
+=head1 DESCRIPTION
+
+=cut
+
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use Pod::Usage;
+use File::Find::Rule;
+use File::Basename 'basename', 'dirname';
+use Module::Build::ModuleInfo;
+use File::Temp qw/ tempdir /;
+use File::Path 'remove_tree';
+use IO::Any 0.04;
+use Parse::Deb::Control 0.03;
+use List::MoreUtils 'any';
+use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
+
+exit main();
+
+sub main {
+	my $help;
+	my $use_old_index;
+	GetOptions(
+		'help|h'        => \$help,
+	) or pod2usage;
+	pod2usage if $help;
+	
+	my $mirror_location = shift @ARGV || '.';
+	pod2usage if not $mirror_location or not -d $mirror_location;
+	#$mirror_location = File::Spec->rel2abs( $mirror_location );
+	
+	my @packages_files = 
+		File::Find::Rule
+		->file()
+		->name( 'Packages.bz2' )
+		->in( $mirror_location )
+	;
+
+	foreach my $packages_file (@packages_files) {
+		print STDERR 'processing ', $packages_file, "\n";
+		
+		my $packages_dir = dirname($packages_file);
+		my $packages_bz_content   = IO::Any->slurp($packages_file);
+		my $packages_file_content;
+		bunzip2 \$packages_bz_content => \$packages_file_content or die "bunzip2 failed: $Bunzip2Error\n";
+
+		my $packages = Parse::Deb::Control->new($packages_file_content);
+		my @deb_files =
+			grep {
+				die $_.' from '.$packages_file.' does not exists'
+					if ! -f File::Spec->catfile($mirror_location, $_);
+				1;
+			}
+			map { s/\s*$//; s/^\s*//; $_ }
+			map { ${$_->{'value'}} } $packages->get_keys('Filename')
+		;
+		
+		my %provides;
+		my %deb_filenames;
+
+		my $perl_packages_bz = File::Spec->catfile($packages_dir, 'PerlPackages.bz2');
+		if (-f $perl_packages_bz) {
+			my $perl_packages_bz_content = IO::Any->slurp($perl_packages_bz);
+			my $perl_packages_file_content;
+			bunzip2 \$perl_packages_bz_content => \$perl_packages_file_content or die "bunzip2 failed: $Bunzip2Error\n";
+			my $idx = Parse::Deb::Control->new($perl_packages_file_content);
+			foreach my $entry ($idx->get_keys('Filename')) {
+				my $filename = ${$entry->{'value'}};
+				$filename =~ s/\s*$//;
+				$filename =~ s/^\s//;
+				my $para  = '';
+				foreach my $key (qw(Package Architecture Filename Version Perl-Modules)) {
+					$para .= $key.':'.$entry->{'para'}->{$key}
+						if $entry->{'para'}->{$key};
+				}
+				
+				$deb_filenames{basename($filename, '.deb')} =  $para
+					if any { $_ eq $filename } @deb_files;
+			}
+		}		
+
+		# process deb files
+		foreach my $deb_file (@deb_files) {
+			my $deb_name = basename($deb_file, '.deb');
+
+			$provides{$deb_name} = undef;
+			
+			# skip already processed
+			next if exists $deb_filenames{$deb_name};
+
+			$deb_filenames{$deb_name} = $deb_file;
+			$provides{$deb_name}      = {};
+			my $tmp_dir = tempdir();
+			
+			system(
+				'dpkg',
+				'-x',
+				File::Spec->catfile($mirror_location, $deb_file),
+				$tmp_dir,
+			);
+			
+			# get list of .pm files
+			my @pm_files = File::Find::Rule
+				->file()
+				->name( '*.pm' )
+				->in( $tmp_dir )
+			;
+					
+			foreach my $pm_file (@pm_files) {
+				# get module info
+				my $info = eval { Module::Build::ModuleInfo->new_from_file($pm_file) };
+				warn 'failed to get module info of "'.$pm_file.'" - "'.$@.'"' if $@;
+				next if not $info;
+				
+				#print 'processing ', $pm_file, "\n";
+				
+				$pm_file =~ s{^$tmp_dir.(.+)$}{$1};
+				foreach my $package (keys %{$info->{'versions'}}) {
+					next if $package eq 'main';
+					
+					# set version to undef 
+					my $version = (
+						$info->{'versions'}->{$package}
+						? $info->{'versions'}->{$package}->stringify
+						: 0
+					);
+					
+					# add version info to the provides only if it's not already there (we are interrested in the oldest package that has that version)
+					$provides{$deb_name}->{$package} = $version;
+				}
+			}
+			
+			remove_tree($tmp_dir);		
+		}
+
+		# write PerlPackages.tmp
+		my $perl_packages_fh = IO::Any->write([$packages_dir, 'PerlPackages.tmp']);
+		foreach my $deb_name (sort keys %provides) {
+			die 'wrong package name - '.$deb_name
+				if $deb_name !~ m/^([^_]+) _ ([^_]+) _ ([^_]+) $/xms;
+			my ($package, $version, $arch) = ($1, $2, $3);
+			
+			if ($provides{$deb_name}) {
+				print $perl_packages_fh 'Package: ', $package, "\n";
+				
+				print
+					$perl_packages_fh
+					'Architecture: ', $arch, "\n",
+					'Filename: ', $deb_filenames{$deb_name}, "\n",
+					'Version: ', $version, "\n"
+				;
+				
+				my $perl_modules_count = scalar keys %{$provides{$deb_name}};
+				if ($perl_modules_count) {
+					print $perl_packages_fh
+						'Perl-Modules: ',
+						($perl_modules_count > 1 ? "\n " : ''),
+						(
+							join(
+								"\n ", map {
+									$_.' ('.$provides{$deb_name}->{$_}.')'
+								} keys %{$provides{$deb_name}}
+							)
+						), "\n"
+					;
+				}
+			}
+			else {
+				print $perl_packages_fh $deb_filenames{$deb_name};
+			}
+			print $perl_packages_fh "\n";
+		}
+
+		# create the PerlPackages.bz2
+		my $perl_packages     = File::Spec->catfile($packages_dir, 'PerlPackages');
+		my $perl_packages_tmp = File::Spec->catfile($packages_dir, 'PerlPackages.tmp');
+		unlink $perl_packages_tmp.'.bz2'
+			if -f $perl_packages_tmp.'.bz2';
+		system('bzip2', '-9', $perl_packages_tmp) and die $!;
+		rename($perl_packages_tmp.'.bz2', $perl_packages.'.bz2') or die $!;
+	}
+
+	return 0;
+}

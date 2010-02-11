@@ -1,0 +1,15 @@
+/Makefile
+/blib
+/pm_to_blib
+/META.yml
+/MYMETA.yml
+/Makefile.PL
+/Build
+/_build
+/*.tar.gz
+/MANIFEST.bak
+/cover_db
+/tmp/*
+/Debian-Apt-PM-*
+/cache/apt/apt-pm/*
+

@@ -1,0 +1,17 @@
+Build.PL
+Changes
+lib/Debian/Apt/PM.pm
+lib/Debian/Apt/PM/SPc.pm
+MANIFEST			This list of files
+META.yml
+README
+script/apt-pm
+script/dpkg-scanpmpackages
+t/01_Debian-Apt-PM.t
+t/distribution.t
+t/fixme.t
+t/PerlPackages.bz2
+t/PerlPackages2.bz2
+t/pod-coverage.t
+t/pod-spell.t
+t/pod.t

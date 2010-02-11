@@ -1,0 +1,82 @@
+NAME
+    Debian::Apt::PM - locate Perl Modules in Debian repositories
+
+SYNOPSIS
+            my $aptpm = Debian::Apt::PM->new(sources => [ 'PerlPackages.bz2' ])
+            $aptpm->update;
+            my %moose_locations = $aptpm->find('Moose');
+
+DESCRIPTION
+    EXPERIMENTAL => "use at your own risk"; # you have bin warned
+
+    See apt-pm command line script for doing updates and searches. See
+    dpkg-scanpmpackages for indexing Debian repositories.
+
+PROPERTIES
+METHODS
+  new()
+    Object constructor.
+
+  find($module_name)
+    Returns hash with Perl versions as key and hash value having Debian
+    version and package name. Example:
+
+            {
+                    '0.94' => {
+                            'version' => '0.94-1',
+                            'package' => 'libmoose-perl'
+                    },
+                    '0.97' => {
+                            'version' => '0.97-1',
+                            'package' => 'libmoose-perl'
+                    },
+                    '0.54' => {
+                            'version' => '0.54-1',
+                            'package' => 'libmoose-perl'
+                    },
+            };
+
+  update
+    Scans the /etc/apt/sources.list and /etc/apt/sources.list.d/*.list
+    repositories for PerlPackages.bz2 and prepares them to be used for find.
+    All PerlPackages.bz2 are stored to /var/cache/apt/apt-pm/.
+
+AUTHOR
+    jozef@kutej.net, `<jkutej at cpan.org>'
+
+BUGS
+    Please report any bugs or feature requests to `bug-debian-apt-pm at
+    rt.cpan.org', or through the web interface at
+    http://rt.cpan.org/NoAuth/ReportBug.html?Queue=Debian-Apt-PM. I will be
+    notified, and then you'll automatically be notified of progress on your
+    bug as I make changes.
+
+SUPPORT
+    You can find documentation for this module with the perldoc command.
+
+        perldoc Debian::Apt::PM
+
+    You can also look for information at:
+
+    * RT: CPAN's request tracker
+        http://rt.cpan.org/NoAuth/Bugs.html?Dist=Debian-Apt-PM
+
+    * AnnoCPAN: Annotated CPAN documentation
+        http://annocpan.org/dist/Debian-Apt-PM
+
+    * CPAN Ratings
+        http://cpanratings.perl.org/d/Debian-Apt-PM
+
+    * Search CPAN
+        http://search.cpan.org/dist/Debian-Apt-PM/
+
+ACKNOWLEDGEMENTS
+LICENSE AND COPYRIGHT
+    Copyright 2010 jkutej@cpan.org.
+
+    This program is free software; you can redistribute it and/or modify it
+    under the terms of either: the GNU General Public License as published
+    by the Free Software Foundation; or the Artistic License.
+
+    See http://dev.perl.org/licenses/ for more information.
+
