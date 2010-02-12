@@ -6,7 +6,7 @@ Debian::Apt::PM - locate Perl Modules in Debian repositories
 
 =head1 NOTE
 
-EXPERIMENTAL => "use at your own risk";    # you have bin warned
+EXPERIMENTAL => "use at your own risk"; B<< # you have bin warned >>
 
 =head1 SYNOPSIS
 
@@ -26,7 +26,7 @@ Module:
 
 =head2 COMMAND-LINE USAGE
 
-Add sources for Debian s and components. Here is the complete list
+Add sources for Debian releases and components. Here is the complete list
 that can be reduced just to the wanted ones:
 
 	cat >> /etc/apt/sources.list << __END__
@@ -79,14 +79,10 @@ use JSON::Util;
 use Debian::Apt::PM::SPc;
 
 
-=head1 PROPERTIES
-
-=cut
-
-has 'sources'         => (is => 'rw', isa => 'ArrayRef', lazy => 1, default => sub { [ glob($_[0]->cachedir.'/*.json') ] });
+has 'sources'         => (is => 'rw', isa => 'ArrayRef', lazy => 1, default => sub { [ glob($_[0]->_cachedir.'/*.json') ] });
 has '_modules_index'  => (is => 'rw', isa => 'HashRef', lazy => 1, default => sub { $_[0]->_create_modules_index });
 has '_apt_config'     => (is => 'rw', lazy => 1, default => sub { $AptPkg::Config::_config->init; $AptPkg::Config::_config; });
-has 'cachedir'        => (is => 'ro', lazy => 1, default => sub { Debian::Apt::PM::SPc->cachedir.'/apt/apt-pm' } );
+has '_cachedir'       => (is => 'ro', lazy => 1, default => sub { Debian::Apt::PM::SPc->cachedir.'/apt/apt-pm' } );
 
 
 =head1 METHODS
@@ -94,6 +90,17 @@ has 'cachedir'        => (is => 'ro', lazy => 1, default => sub { Debian::Apt::P
 =head2 new()
 
 Object constructor.
+
+=head3 PROPERTIES
+
+=over 4
+
+=item sources
+
+C<< isa => 'ArrayRef' >> of files that will be read to construct the lookup.
+By default it is filled with files from F</var/cache/apt/apt-pm/>.
+
+=back
 
 =head2 find($module_name)
 
@@ -138,11 +145,11 @@ All F<PerlPackages.bz2> are stored to F</var/cache/apt/apt-pm/>.
 sub update {
 	my $self = shift;
 	
-	my @existing = glob($self->cachedir.'/*.bz2');
+	my @existing = glob($self->_cachedir.'/*.bz2');
 	foreach my $url ($self->_etc_apt_sources) {
 		my $filename = $url;
 		$filename =~ s/[^a-zA-Z0-9\-\.]/_/gxms;
-		$filename = $self->cachedir.'/'.$filename;
+		$filename = $self->_cachedir.'/'.$filename;
 		@existing = grep { $_ ne $filename } @existing;
 		if (mirror($url, $filename) == RC_OK) {
 			my $json_filename = $filename; $json_filename =~ s/\.bz2$/.json/;
@@ -169,7 +176,7 @@ Remove all files fom cache dir.
 sub clean {
 	my $self = shift;
 	
-	foreach my $filename (glob($self->cachedir.'/*')) {
+	foreach my $filename (glob($self->_cachedir.'/*')) {
 		unlink($filename) or warn 'failed to remove '.$filename."\n";
 	}
 }

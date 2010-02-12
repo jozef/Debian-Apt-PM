@@ -19,8 +19,8 @@ SYNOPSIS
 
 USAGE
   COMMAND-LINE USAGE
-    Add sources for Debian s and components. Here is the complete list that
-    can be reduced just to the wanted ones:
+    Add sources for Debian releases and components. Here is the complete
+    list that can be reduced just to the wanted ones:
 
             cat >> /etc/apt/sources.list << __END__
             # for apt-pm
@@ -50,10 +50,15 @@ USAGE
             apt-pm find Dpkg::Version
             # dpkg-dev_1.14.28_all: Dpkg::Version 0
 
-PROPERTIES
 METHODS
   new()
     Object constructor.
+
+    PROPERTIES
+    sources
+        `isa => 'ArrayRef'' of files that will be read to construct the
+        lookup. By default it is filled with files from
+        /var/cache/apt/apt-pm/.
 
   find($module_name)
     Returns hash with Perl versions as key and hash value having Debian
