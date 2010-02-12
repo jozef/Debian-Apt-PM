@@ -1,5 +1,8 @@
 Revision history for Debian-Apt-PM
 
+0.02
+    * Build.PL fixes
+
 0.01    Date/time
         First version, released on an unsuspecting world.
 
