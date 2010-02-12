@@ -1,6 +1,6 @@
 Revision history for Debian-Apt-PM
 
-0.02
+0.02    12 Feb 2010
     * Build.PL fixes
     * more Pod
     * showing architecture too

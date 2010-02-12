@@ -60,7 +60,7 @@ METHODS
         lookup. By default it is filled with files from
         /var/cache/apt/apt-pm/.
 
-  find($module_name)
+  find($module_name, [$min_version])
     Returns hash with Perl versions as key and hash value having Debian
     version and package name. Example:
 
@@ -81,6 +81,32 @@ METHODS
                             'arch'    => 'i386'
                     },
             };
+
+    If `$min_version' is set, returns `min' and `max' keys. `max' has always
+    the highest version:
+
+            'max' => {
+                    'version' => '0.97-1',
+                    'package' => 'libmoose-perl'
+                    'arch'    => 'i386'
+            },
+
+    `min' is changing depending on `$min_version'. Examples:
+
+            $min_version = '0.01';
+            'min' => {
+                    'version' => '0.54-1',
+                    'package' => 'libmoose-perl'
+                    'arch'    => 'i386'
+            },
+            $min_version = '0.93';
+            'min' => {
+                    'version' => '0.94-1',
+                    'package' => 'libmoose-perl'
+                    'arch'    => 'i386'
+            },
+            $min_version = '1.00';
+            'min' => undef,
 
   update
     Scans the /etc/apt/sources.list and /etc/apt/sources.list.d/*.list
