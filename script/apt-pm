@@ -72,3 +72,11 @@ sub main {
 	
 	return 0;
 }
+
+__END__
+
+=head1 SEE ALSO
+
+L<Debian::Apt::PM>
+
+=cut
