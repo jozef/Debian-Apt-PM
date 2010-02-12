@@ -160,6 +160,20 @@ sub update {
 	}
 }
 
+=head2 clean
+
+Remove all files fom cache dir.
+
+=cut
+
+sub clean {
+	my $self = shift;
+	
+	foreach my $filename (glob($self->cachedir.'/*')) {
+		unlink($filename) or warn 'failed to remove '.$filename."\n";
+	}
+}
+
 sub _etc_apt_sources {
 	my $self = shift;
 

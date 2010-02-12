@@ -8,6 +8,7 @@ apt-pm - locate Perl Modules in Debian repositories
 
 	apt-pm search Moose::Meta::Role
 	apt-pm update
+	apt-pm clean
 
 =head1 DESCRIPTION
 
@@ -38,7 +39,7 @@ sub main {
 	my $cmd     = shift @ARGV;
 	my $package = shift @ARGV;
 	pod2usage if not $cmd;
-	pod2usage if none { $_ eq $cmd } qw(search find update);
+	pod2usage if none { $_ eq $cmd } qw(search find update clean);
 	
 	my $aptpm = Debian::Apt::PM->new();
 	$aptpm->sources([split(',', $sources)])
@@ -47,6 +48,10 @@ sub main {
 	# get provides from dbedia.com
 	if ($cmd eq 'update') {
 		$aptpm->update();
+	}
+	
+	if ($cmd eq 'clean') {
+		$aptpm->clean();
 	}
 
 	# lookup the package

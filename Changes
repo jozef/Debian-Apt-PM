@@ -4,6 +4,7 @@ Revision history for Debian-Apt-PM
     * Build.PL fixes
     * more Pod
     * showing architecture too
+    * clean cache command
 
 0.01    Date/time
         First version, released on an unsuspecting world.

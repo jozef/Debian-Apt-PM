@@ -82,6 +82,9 @@ METHODS
     repositories for PerlPackages.bz2 and prepares them to be used for find.
     All PerlPackages.bz2 are stored to /var/cache/apt/apt-pm/.
 
+  clean
+    Remove all files fom cache dir.
+
 AUTHOR
     jozef@kutej.net, `<jkutej at cpan.org>'
 
