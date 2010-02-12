@@ -6,6 +6,7 @@ Revision history for Debian-Apt-PM
     * showing architecture too
     * clean cache command
     * look for deb with min pm version
+    * CPAN::Distribution patch
 
 0.01    Date/time
         First version, released on an unsuspecting world.
