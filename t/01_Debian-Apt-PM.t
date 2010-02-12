@@ -55,11 +55,13 @@ sub main {
 		
 		my %deb1 = (
 			'version' => '5.230-1',
-			'package' => 'libanyevent-perl'
+			'package' => 'libanyevent-perl',
+			'arch'    => 'all',
 		);
 		my %deb2 = (
 			'version' => '0.21-1',
-			'package' => 'libclass-c3-perl'
+			'package' => 'libclass-c3-perl',
+			'arch'    => 'all',
 		);
 
 		eq_or_diff(
@@ -102,15 +104,18 @@ sub main {
 
 		my %deb3 = (
 			'version' => '1.000-1',
-			'package' => 'libanyevent-perl'
+			'package' => 'libanyevent-perl',
+			'arch'    => 'all',
 		);
 		my %deb4 = (
 			'version' => '0.22-1',
-			'package' => 'libclass-c3-perl'
+			'package' => 'libclass-c3-perl',
+			'arch'    => 'all',
 		);
 		my %deb5 = (
 			'version' => '4.00-1',
-			'package' => 'libclass-c4-perl'
+			'package' => 'libclass-c4-perl',
+			'arch'    => 'all',
 		);
 		my %result2 = (
 			'Class::C3' => {

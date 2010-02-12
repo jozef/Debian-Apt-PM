@@ -4,18 +4,58 @@ package Debian::Apt::PM;
 
 Debian::Apt::PM - locate Perl Modules in Debian repositories
 
+=head1 NOTE
+
+EXPERIMENTAL => "use at your own risk";    # you have bin warned
+
 =head1 SYNOPSIS
+
+Cmd-line:
+
+	apt-pm update
+	apt-pm find Moose
+	dpkg-scanpmpackages /path/to/debian/repository
+
+Module:
 
 	my $aptpm = Debian::Apt::PM->new(sources => [ 'PerlPackages.bz2' ])
 	$aptpm->update;
 	my %moose_locations = $aptpm->find('Moose');
 
-=head1 DESCRIPTION
+=head USAGE
 
-EXPERIMENTAL => "use at your own risk";    # you have bin warned
+=head2 COMMAND-LINE USAGE
 
-See F<apt-pm> command line script for doing updates and searches.
-See F<dpkg-scanpmpackages> for indexing Debian repositories.
+Add sources for Debian s and components. Here is the complete list
+that can be reduced just to the wanted ones:
+
+	cat >> /etc/apt/sources.list << __END__
+	# for apt-pm
+	deb http://dbedia.com/Debian/mirror/ etch    main contrib non-free
+	deb http://dbedia.com/Debian/mirror/ lenny   main contrib non-free
+	deb http://dbedia.com/Debian/mirror/ sid     main contrib non-free
+	deb http://dbedia.com/Debian/mirror/ squeeze main contrib non-free
+	__END__
+
+Fetch the indexes:
+
+	apt-pm update
+
+Look for the CPAN modules:
+
+	apt-pm find Moose
+	# libmoose-perl_0.17-1_all: Moose 0.17
+	# libmoose-perl_0.94-1_i386: Moose 0.94
+	# libmoose-perl_0.97-1_i386: Moose 0.97
+	# libmoose-perl_0.54-1_all: Moose 0.54
+
+Look for the non-CPAN modules:
+	
+	apt-pm find Purple        
+	# libpurple0_2.4.3-4lenny5_i386: Purple 0.01
+	
+	apt-pm find Dpkg::Version
+	# dpkg-dev_1.14.28_all: Dpkg::Version 0
 
 =cut
 
@@ -64,14 +104,17 @@ and package name. Example:
 		'0.94' => {
 			'version' => '0.94-1',
 			'package' => 'libmoose-perl'
+			'arch'    => 'i386'
 		},
 		'0.97' => {
 			'version' => '0.97-1',
 			'package' => 'libmoose-perl'
+			'arch'    => 'i386'
 		},
 		'0.54' => {
 			'version' => '0.54-1',
 			'package' => 'libmoose-perl'
+			'arch'    => 'i386'
 		},
 	};
 
@@ -172,6 +215,7 @@ sub _parse_perlpackages_content {
 		my %deb = (
 			'version' => _trim($entry->{'para'}->{'Version'}),
 			'package' => _trim($entry->{'para'}->{'Package'}),
+			'arch'    => _trim($entry->{'para'}->{'Architecture'}),
 		);
 		
 		push @content_list, { modules => \%modules, deb => \%deb };
