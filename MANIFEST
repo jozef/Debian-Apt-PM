@@ -7,6 +7,7 @@ META.yml
 README
 script/apt-pm
 script/dpkg-scanpmpackages
+t/00_compile.t
 t/01_Debian-Apt-PM.t
 t/distribution.t
 t/fixme.t

@@ -32,4 +32,5 @@
 .*\.tar\.gz
 ^MYMETA.yml$
 ^Debian-Apt-PM-
+cache/apt/apt-pm/
 

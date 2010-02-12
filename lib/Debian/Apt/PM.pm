@@ -22,7 +22,7 @@ Module:
 	$aptpm->update;
 	my %moose_locations = $aptpm->find('Moose');
 
-=head USAGE
+=head1 USAGE
 
 =head2 COMMAND-LINE USAGE
 
@@ -62,7 +62,7 @@ Look for the non-CPAN modules:
 use warnings;
 use strict;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use 5.010;
 

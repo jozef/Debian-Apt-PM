@@ -2,6 +2,8 @@ Revision history for Debian-Apt-PM
 
 0.02
     * Build.PL fixes
+    * more Pod
+    * showing architecture too
 
 0.01    Date/time
         First version, released on an unsuspecting world.
