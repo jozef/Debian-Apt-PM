@@ -37,6 +37,8 @@ my $builder = Module::Build::SysPath->new(
         'Module::Build::ModuleInfo' => 0,
         'File::Temp'              => 0,
         'File::Path'              => 0,
+        'CPAN::Version'           => 0,
+        'Storable'                => 0,
     },
     script_files => [
         'script/apt-pm',

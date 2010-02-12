@@ -5,6 +5,7 @@ Revision history for Debian-Apt-PM
     * more Pod
     * showing architecture too
     * clean cache command
+    * look for deb with min pm version
 
 0.01    Date/time
         First version, released on an unsuspecting world.

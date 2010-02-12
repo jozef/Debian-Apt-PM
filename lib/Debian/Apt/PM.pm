@@ -75,6 +75,8 @@ use AptPkg::Config '$_config';
 use LWP::Simple 'mirror', 'RC_OK';
 use Carp 'croak';
 use JSON::Util;
+use CPAN::Version;
+use Storable 'dclone';
 
 use Debian::Apt::PM::SPc;
 
@@ -102,7 +104,7 @@ By default it is filled with files from F</var/cache/apt/apt-pm/>.
 
 =back
 
-=head2 find($module_name)
+=head2 find($module_name, [$min_version])
 
 Returns hash with Perl versions as key and hash value having Debian version
 and package name. Example:
@@ -125,13 +127,60 @@ and package name. Example:
 		},
 	};
 
+If C<$min_version> is set, returns C<min> and C<max> keys. C<max> has always
+the highest version:
+
+	'max' => {
+		'version' => '0.97-1',
+		'package' => 'libmoose-perl'
+		'arch'    => 'i386'
+	},
+
+C<min> is changing depending on C<$min_version>. Examples:
+
+	$min_version = '0.01';
+	'min' => {
+		'version' => '0.54-1',
+		'package' => 'libmoose-perl'
+		'arch'    => 'i386'
+	},
+	$min_version = '0.93';
+	'min' => {
+		'version' => '0.94-1',
+		'package' => 'libmoose-perl'
+		'arch'    => 'i386'
+	},
+	$min_version = '1.00';
+	'min' => undef,
+
 =cut
 
 sub find {
-	my $self = shift;
-	my $module = shift;
+	my $self        = shift;
+	my $module      = shift;
+	my $min_version = shift;
 	
-	return $self->_modules_index()->{$module};
+	my $versions_info = $self->_modules_index()->{$module};
+	return if not $versions_info;
+	
+	# clone the info
+	$versions_info = dclone($versions_info);
+	
+	# if not min then we are done
+	return $versions_info
+		if not defined $min_version;
+
+	# sort available versions and grep smaller than requested
+	my @versions =
+		sort { CPAN::Version->vcmp($a, $b) }
+		keys %{$versions_info}
+	;
+
+	$versions_info->{'max'} = $versions_info->{$versions[-1]};
+	@versions = grep { not CPAN::Version->vlt($_, $min_version) } @versions;
+	$versions_info->{'min'} = (@versions ? $versions_info->{$versions[0]} : undef);
+	
+	return $versions_info;
 }
 
 =head2 update
