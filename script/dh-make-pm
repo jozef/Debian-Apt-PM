@@ -55,6 +55,20 @@ indexing and creating repository.
 	dh-make-pm --cpan Debian::Apt::PM
 	dh-make-pm --cpan Tatsumaki
 
+=head1 when something goes wrong
+
+I most cases when there is a missing or wrong dependency then the .deb
+build will fail.
+
+	cd $HOME/.dh-make-pm/build/$TAR_BALL_FOLDER/
+	vim debian/control
+	# set correct dependencies
+	pdebuild
+	mv /var/cache/pbuilder/result/*-perl* /var/cache/pbuilder/result/unstable/
+	cd /var/cache/pbuilder/result
+	make
+	dh-make-pm --cpan $THE_MODULE_YOU_WANTED_TO_BUILD
+
 =cut
 
 
