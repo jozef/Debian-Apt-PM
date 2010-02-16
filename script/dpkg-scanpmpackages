@@ -7,6 +7,9 @@ dpkg-scanpmpackages - creates PerlPackages index from .deb files
 =head1 SYNOPSIS
 
 	reprepro-update-perl-packages [repository_folder]
+	
+		--blacklist=comman,sep,package,names
+			optional - packages that should be not indexed
 
 =head1 DESCRIPTION
 
@@ -31,14 +34,17 @@ use IO::Any 0.04;
 use Parse::Deb::Control 0.03;
 use List::MoreUtils 'any';
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
+use Carp 'croak';
 
 exit main();
 
 sub main {
 	my $help;
 	my $use_old_index;
+	my $blacklisted_pkgs_arg = 'r-cran-gdata';
 	GetOptions(
-		'help|h'        => \$help,
+		'help|h'      => \$help,
+		'blacklist=s' => \$blacklisted_pkgs_arg,
 	) or pod2usage;
 	pod2usage if $help;
 	
@@ -52,6 +58,8 @@ sub main {
 		->name( 'Packages.bz2' )
 		->in( $mirror_location )
 	;
+	
+	my @blacklisted_pkgs = split(/\s*,\s*/, $blacklisted_pkgs_arg);
 
 	foreach my $packages_file (@packages_files) {
 		print STDERR 'processing ', $packages_file, "\n";
@@ -69,7 +77,9 @@ sub main {
 				1;
 			}
 			map { s/\s*$//; s/^\s*//; $_ }
-			map { ${$_->{'value'}} } $packages->get_keys('Filename')
+			map { ${$_->{'value'}} }
+			grep { not _trim($_->{'para'}->{'Package'}) ~~ \@blacklisted_pkgs }
+			$packages->get_keys('Filename')
 		;
 		
 		my %provides;
@@ -198,6 +208,16 @@ sub main {
 	}
 
 	return 0;
+}
+
+sub _trim {
+	my $text = shift;
+	croak 'too much argauments' if @_;
+	
+	$text =~ s/^\s+//xms;
+	$text =~ s/\s+$//xms;
+	
+	return $text;
 }
 
 __END__
