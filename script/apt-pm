@@ -22,7 +22,7 @@ use warnings;
 
 use Getopt::Long;
 use Pod::Usage;
-use Debian::Apt::PM;
+use Debian::Apt::PM 0.03;
 use List::MoreUtils 'none';
 
 exit main();

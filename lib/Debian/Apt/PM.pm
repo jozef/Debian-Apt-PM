@@ -62,7 +62,7 @@ Look for the non-CPAN modules:
 use warnings;
 use strict;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use 5.010;
 
@@ -253,18 +253,23 @@ sub _etc_apt_sources {
 			when (/^\s*$/) {};          # skip empty lines
 			when (/^\s*#/) {};          # skip comments
 			when (/^\s*deb-src/) {};    # skip source
-			when (/^ \s* deb \s+ ([^ ]+) \s+ ([^ ]+) \s+ (.+) $/xms) {
+			when (/^ \s* deb \s+ ([^ ]+) \s+ ([^ ]+) (?: \s+ (.+) | \/ \s*) $/xms) {
 				my ($url, $path, $components_string) = ($1, $2, $3);
-				my @components = grep { $_ } split(/\s+/, $components_string);
+				my @components = grep { $_ } split(/\s+/, $components_string || '');
 				
 				if ($url !~ m{^(:? http:// | ftp:// | file://)}xms) {
 					warn 'unsupported schema - '.$url;
 					next;
 				}
 				
-				push @urls, map {
-					$url.'dists/'.$path.'/'.$_.'/binary-'.$arch.'/PerlPackages.bz2'
-				} @components;
+				if (@components) {
+					push @urls, map {
+						$url.'dists/'.$path.'/'.$_.'/binary-'.$arch.'/PerlPackages.bz2'
+					} @components;
+				}
+				else {
+					push @urls, $url.$path.'/PerlPackages.bz2';
+				}
 			};
 			default { warn 'unknown sources.list line - '.$line };
 		}
