@@ -1,0 +1,204 @@
+#!/usr/bin/perl
+
+=head1 NAME
+
+dh-make-pm - build Debian packages (dh-make-perl on pbuilder+cowdancer  steroids)
+
+=head1 SYNOPSIS
+
+	dh-make-pm --cpan Debian::Apt::PM
+
+=head1 DESCRIPTION
+
+F<dh-make-pm> is basicaly recursive F<dh-make-perl> that will build the
+deb package from CPAN distribution and all it's dependecies properly
+indexing and creating repository.
+
+=head1 USAGE
+
+=head1 pbuilder set-up
+
+	# add to /etc/pbuilderrc
+	MIRRORSITE=http://ftp.cz.debian.org/debian/
+	BINDMOUNTS="/var/cache/pbuilder/result"
+	PDEBUILD_PBUILDER=cowbuilder
+
+	# execute
+	sudo apt-get install cowdancer
+	cowbuilder --create --distribution sid
+	echo "dh-make-pm" > /var/cache/pbuilder/base.cow/etc/debian_chroot
+	
+	mkdir /var/cache/pbuilder/result/unstable
+	wget http://bratislava.pm.org/tutorial/debian-simple-repo/Makefile -O /var/cache/pbuilder/result/Makefile
+	wget http://bratislava.pm.org/tutorial/debian-simple-repo/Release.conf -O /var/cache/pbuilder/result/Release.conf
+	
+	vim /var/cache/pbuilder/base.cow/etc/apt/sources.list    # update to your taste
+	echo "deb file:///var/cache/pbuilder/result/ unstable/" >> /var/cache/pbuilder/base.cow/etc/apt/sources.list
+	echo "deb file:///var/cache/pbuilder/result/ unstable/" >> /etc/apt/sources.list
+
+	# generate a key without passphrase
+	gpg --gen-key
+	gpg --export --armor $KEYID
+	apt-key add -
+	chroot /var/cache/pbuilder/base.cow/
+	apt-key add -
+	exit
+
+	cowbuilder --update --bindmounts /var/cache/pbuilder/result/
+	
+	# patch DhMakePerl.pm
+	cd /usr/share/perl5/
+	patch -p1 < $DIST_ROOT/patch/DhMakePerl.pm.patch
+
+=head1 create deb files
+
+	dh-make-pm --cpan Debian::Apt::PM
+	dh-make-pm --cpan Tatsumaki
+
+=cut
+
+
+use strict;
+use warnings;
+
+use 5.010;
+
+use Getopt::Long;
+use Pod::Usage;
+use File::HomeDir;
+use File::Path 2.01 'make_path', 'remove_tree';
+use CPAN;
+use File::Basename 'basename';
+use File::Copy 'copy';
+
+use Debian::Apt::PM;
+our $aptpm = Debian::Apt::PM->new();
+
+exit main();
+
+sub main {
+	my $help;
+	my $module_name;
+	my $repository_folder = '/var/cache/pbuilder/result';
+	my $build_folder      = File::Spec->catdir(File::HomeDir->my_home, '.dh-make-pm', 'build');
+	GetOptions(
+		'help|h'  => \$help,
+		'cpan=s'  => \$module_name,
+		'repo=s'  => \$repository_folder,
+		'build=s' => \$build_folder,
+	) or pod2usage;
+	pod2usage if $help;
+	pod2usage if not $module_name;
+
+	my ($deb_in_root_of_repo) = </var/cache/pbuilder/result/*.deb>;
+	die $deb_in_root_of_repo.' left unsorted'
+		if $deb_in_root_of_repo;
+	
+	die $repository_folder.' folder does not exists'
+		if not -d $repository_folder;
+	die $build_folder.' folder does not exists'
+		if not -d $build_folder;
+	
+	my %all_prereq;
+	my @to_make = ($module_name);
+
+	# update Perl indexes
+	system('apt-pm', 'update') and die $!;
+
+	my $i = 0;
+	while (@to_make > $i) {
+		my %prereq = find_prereq($to_make[$i++]);
+		foreach my $new_req (keys %prereq) {
+			if (not $all_prereq{$new_req}) {
+				$all_prereq{$new_req} = $prereq{$new_req};
+				push @to_make, $new_req;
+			}
+		}
+	}
+	
+	print STDERR 'going to build deb from ', join(', ', @to_make), "\n";
+
+	while (my $build = pop @to_make) {
+		# refresh the repository
+		chdir($repository_folder);
+		system('make', 'all') and die $!;
+		system('apt-pm', 'update') and die $!;
+		system('sudo', 'cowbuilder', '--update', '--bindmounts', '/var/cache/pbuilder/result/') and die $!;
+		
+		# clean-up build directory
+		remove_tree( $build_folder, {keep_root => 1} );
+
+		my $dist = CPAN::Shell->expand('Module', $build)->distribution;
+		my $meta = $dist->parse_meta_yml;
+		my ($dist_folder, $dist_tarball) = $dist->run_preps_on_packagedir;
+
+		copy($dist_tarball, $build_folder) or die "Copy failed: $!";;
+		$dist_tarball = basename($dist_tarball);
+		
+		chdir($build_folder) or die $!;
+
+		given ($dist_tarball) {
+			when (/(\.tar\.gz|\.tgz)$/) {
+				system('tar', 'xvzf', $dist_tarball);
+			}
+			when (/\.tar\.bz2$/) {
+				system('tar', 'xvjf', $dist_tarball);
+			}
+			default {
+				die 'unsupported dist format - '.$dist_tarball;
+			}
+		}
+		
+		my ($folder) = grep { -d $_ } <*>;
+		die 'distribution '.$dist_tarball.' folder not found'
+			if not $folder;
+		
+		chdir($folder);
+		system('dh-make-perl') and die $!;
+		system('pdebuild', '--pbuilder', 'cowbuilder') and die $!;		
+		
+		my ($generated_deb) = </var/cache/pbuilder/result/*.deb>;
+		die $dist_tarball.' deb build failed'
+			if not $generated_deb;
+		die 'is '.$generated_deb.' deb archive?'
+			if $generated_deb !~ m{^ ([^_]+) _ [^/]+ $}xms;
+		my $deb_basename = $1;
+		
+		system('mv', glob($deb_basename.'*'), '/var/cache/pbuilder/result/unstable') and die $!;
+	}
+	
+	
+	return 0;
+}
+
+sub find_prereq {
+	my $module_name = shift;
+	
+	return if $module_name ~~ ['perl'];
+	
+	my $dist = CPAN::Shell->expand('Module', $module_name);
+	$dist = $dist->distribution
+		if $dist;
+	die $module_name.' not found'
+		if not $dist;
+	
+	$dist->get;
+	my $meta = $dist->parse_meta_yml;
+	my %prereq = map { %{$meta->{$_} || {}} } qw(requires build_requires configure_requires recommends);
+
+    my @debs;
+    my @build_dep;
+    while (my($need_module, $need_version) = each %prereq) {
+		# ignore Perl version requires, no clue how to handle
+		if ($need_module ~~ ['perl']) {
+			delete $prereq{$need_module};
+			next;
+		};
+		
+        my $debs = $aptpm->find($need_module, $need_version);
+		delete $prereq{$need_module}
+        	if ($debs and $debs->{'min'});
+    }
+    
+    return %prereq;
+}
