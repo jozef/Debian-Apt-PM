@@ -9,6 +9,13 @@ apt-pm - locate Perl Modules in Debian repositories
 	apt-pm search Moose::Meta::Role
 	apt-pm update
 	apt-pm clean
+	
+options:
+
+	--sources
+		comman separated list of index files to use for search/find
+	--deb-src
+		search in source repositories
 
 =head1 DESCRIPTION
 
@@ -30,30 +37,44 @@ exit main();
 sub main {
 	my $help;
 	my $sources;
+	my $search_src = 0;
 	GetOptions(
 		'help|h'      => \$help,
 		'sources|s=s' => \$sources,
+		'deb-src'     => \$search_src,
 	) or pod2usage;
 	pod2usage if $help;
+	
+	# the switch makes no sence when sources explicitely set
+	$search_src = 0
+		if $sources;
 	
 	my $cmd     = shift @ARGV;
 	my $package = shift @ARGV;
 	pod2usage if not $cmd;
 	pod2usage if none { $_ eq $cmd } qw(search find update clean);
 	
-	my $aptpm = Debian::Apt::PM->new();
+	my $aptpm     = Debian::Apt::PM->new();
+	my $aptpm_src = Debian::Apt::PM->new(repo_type => 'deb-src');
 	$aptpm->sources([split(',', $sources)])
 		if ($sources);
 	
 	# get provides from dbedia.com
 	if ($cmd eq 'update') {
 		$aptpm->update();
+		$aptpm_src->update()
+			if not $sources;
 	}
 	
 	if ($cmd eq 'clean') {
 		$aptpm->clean();
+		$aptpm_src->clean()
+			if not $sources;
 	}
 
+	$aptpm = $aptpm_src
+		if ($search_src);
+	
 	# lookup the package
 	if (($cmd eq 'search') or ($cmd eq 'find')) {
 		pod2usage if not $package;

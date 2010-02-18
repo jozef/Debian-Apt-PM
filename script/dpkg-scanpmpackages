@@ -69,6 +69,7 @@ sub main {
 		my $packages_file_content;
 		bunzip2 \$packages_bz_content => \$packages_file_content or die "bunzip2 failed: $Bunzip2Error\n";
 
+		my %deb_to_src;
 		my $packages = Parse::Deb::Control->new($packages_file_content);
 		my @deb_files =
 			grep {
@@ -76,12 +77,16 @@ sub main {
 					if ! -f File::Spec->catfile($mirror_location, $_);
 				1;
 			}
-			map { s/\s*$//; s/^\s*//; $_ }
-			map { ${$_->{'value'}} }
+			map { _trim($_->{'para'}->{'Filename'}) }
+			map {
+				$deb_to_src{_trim($_->{'para'}->{'Filename'})} = _trim($_->{'para'}->{'Source'})
+					if $_->{'para'}->{'Source'};
+				$_;
+			}
 			grep { not _trim($_->{'para'}->{'Package'}) ~~ \@blacklisted_pkgs }
 			$packages->get_keys('Filename')
 		;
-		
+				
 		my %provides;
 		my %deb_filenames;
 
@@ -96,7 +101,7 @@ sub main {
 				$filename =~ s/\s*$//;
 				$filename =~ s/^\s//;
 				my $para  = '';
-				foreach my $key (qw(Package Architecture Filename Version Perl-Modules)) {
+				foreach my $key (qw(Package Architecture Filename Version Source Perl-Modules)) {
 					$para .= $key.':'.$entry->{'para'}->{$key}
 						if $entry->{'para'}->{$key};
 				}
@@ -174,7 +179,12 @@ sub main {
 					$perl_packages_fh
 					'Architecture: ', $arch, "\n",
 					'Filename: ', $deb_filenames{$deb_name}, "\n",
-					'Version: ', $version, "\n"
+					'Version: ', $version, "\n",
+					(
+						$deb_to_src{$deb_filenames{$deb_name}}
+						? ('Source: ', $deb_to_src{$deb_filenames{$deb_name}}, "\n")
+						: ()
+					),
 				;
 				
 				my $perl_modules_count = scalar keys %{$provides{$deb_name}};
