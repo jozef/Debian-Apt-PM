@@ -151,24 +151,36 @@ sub main {
 		
 		chdir($build_folder) or die $!;
 
-		given ($dist_tarball) {
-			when (/(\.tar\.gz|\.tgz)$/) {
-				system('tar', 'xvzf', $dist_tarball);
-			}
-			when (/\.tar\.bz2$/) {
-				system('tar', 'xvjf', $dist_tarball);
-			}
-			default {
-				die 'unsupported dist format - '.$dist_tarball;
-			}
-		}
+		extract_dist_tarball($dist_tarball);
 		
 		my ($folder) = grep { -d $_ } <*>;
 		die 'distribution '.$dist_tarball.' folder not found'
 			if not $folder;
 		
+		rename($folder, $folder.'.orig');
+		extract_dist_tarball($dist_tarball);
+		
 		chdir($folder);
 		system('dh-make-perl') and die $!;
+		
+		my $changes_file = IO::Any->slurp('debian/changelog');
+		die 'failed to parse package name and version from debian/changelog'
+			if $changes_file !~ m/\A([-a-z]+) \s+ \(([^)]+)\)/xms;
+		my ($package_name, $package_version) = ($1, $2);
+		chdir('..');
+		my $debian_folder = $package_name.'-'.$package_version;
+		$debian_folder =~ s/-[^-]+$//xms;    # strip debian packaging version
+		my $debian_filename = $package_name.'_'.$package_version;
+		$debian_filename =~ s/-[^-]+$//xms;    # strip debian packaging version
+		die 'ups' if $folder eq $debian_folder;     # should never happend but if than better die
+		rename($folder.'.orig', $debian_folder);
+		system('tar', 'cvzf',  $debian_filename.'.orig.tar.gz', $debian_folder);
+		rename($debian_folder, $debian_folder.'.orig');
+		rename($folder, $debian_folder);
+		system('diff -Naur '.$debian_folder.'.orig '.$debian_folder.' | gzip -9 > '.$package_name.'_'.$package_version.'.diff.gz');
+		remove_tree($debian_folder.'.orig');
+
+		chdir($debian_folder);
 		system('pdebuild', '--pbuilder', 'cowbuilder') and die $!;		
 		
 		my ($generated_deb) = </var/cache/pbuilder/result/*.deb>;
@@ -215,4 +227,19 @@ sub find_prereq {
     }
     
     return %prereq;
+}
+
+sub extract_dist_tarball {
+	my $dist_tarball = shift or die;
+	given ($dist_tarball) {
+		when (/(\.tar\.gz|\.tgz)$/) {
+			system('tar', 'xvzf', $dist_tarball);
+		}
+		when (/\.tar\.bz2$/) {
+			system('tar', 'xvjf', $dist_tarball);
+		}
+		default {
+			die 'unsupported dist format - '.$dist_tarball;
+		}
+	}
 }
