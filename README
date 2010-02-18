@@ -60,6 +60,13 @@ METHODS
         lookup. By default it is filled with files from
         /var/cache/apt/apt-pm/.
 
+    cachedir
+        Is the folder where indexes cache files will be stored. Default is
+        /var/cache/apt/apt-pm/deb/.
+
+    repo_type
+        `deb|deb-src'
+
   find($module_name, [$min_version])
     Returns hash with Perl versions as key and hash value having Debian
     version and package name. Example:

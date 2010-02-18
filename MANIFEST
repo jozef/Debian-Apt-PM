@@ -1,11 +1,19 @@
 Build.PL
+cache/apt/apt-pm/deb-src/.exists
+cache/apt/apt-pm/deb/.exists
 Changes
+examples/repo/Makefile
+examples/repo/Release.conf
+examples/repo/unstable/.exists
 lib/Debian/Apt/PM.pm
 lib/Debian/Apt/PM/SPc.pm
 MANIFEST			This list of files
 META.yml
+patches/DhMakePerl.pm.patch
+patches/Distribution.pm.patch
 README
 script/apt-pm
+script/dh-make-pm
 script/dpkg-scanpmpackages
 t/00_compile.t
 t/01_Debian-Apt-PM.t
