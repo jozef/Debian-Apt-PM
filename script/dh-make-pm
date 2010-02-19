@@ -165,7 +165,7 @@ sub main {
 		
 		my $changes_file = IO::Any->slurp('debian/changelog');
 		die 'failed to parse package name and version from debian/changelog'
-			if $changes_file !~ m/\A([-a-z]+) \s+ \(([^)]+)\)/xms;
+			if $changes_file !~ m/\A([-a-z0-9]+) \s+ \(([^)]+)\)/xms;
 		my ($package_name, $package_version) = ($1, $2);
 		chdir('..');
 		my $debian_folder = $package_name.'-'.$package_version;
