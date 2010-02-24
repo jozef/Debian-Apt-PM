@@ -7,6 +7,8 @@ dh-make-pm - build Debian packages (dh-make-perl on pbuilder+cowdancer  steroids
 =head1 SYNOPSIS
 
 	dh-make-pm --cpan Debian::Apt::PM
+	
+		--no-retry   will skip packaging modules that already failed to package
 
 =head1 DESCRIPTION
 
@@ -84,6 +86,8 @@ use File::Path 2.01 'make_path', 'remove_tree';
 use CPAN;
 use File::Basename 'basename';
 use File::Copy 'copy';
+use JSON::Util;
+use Debian::Apt::PM::SPc;
 
 use Debian::Apt::PM;
 our $aptpm = Debian::Apt::PM->new();
@@ -95,11 +99,13 @@ sub main {
 	my $module_name;
 	my $repository_folder = '/var/cache/pbuilder/result';
 	my $build_folder      = File::Spec->catdir(File::HomeDir->my_home, '.dh-make-pm', 'build');
+	my $no_build_retry    = 0;
 	GetOptions(
 		'help|h'  => \$help,
 		'cpan=s'  => \$module_name,
 		'repo=s'  => \$repository_folder,
 		'build=s' => \$build_folder,
+		'no-retry' => \$no_build_retry,
 	) or pod2usage;
 	pod2usage if $help;
 	pod2usage if not $module_name;
@@ -112,6 +118,11 @@ sub main {
 		if not -d $repository_folder;
 	die $build_folder.' folder does not exists'
 		if not -d $build_folder;
+	
+	my $build_history_filename = Debian::Apt::PM::SPc->sharedstatedir.'/dh-make-pm/build-history.json';
+	JSON::Util->encode({}, [$build_history_filename])
+		if not -f $build_history_filename;
+	my %build_history = %{JSON::Util->decode([$build_history_filename])};
 	
 	my %all_prereq;
 	my @to_make = ($module_name);
@@ -133,12 +144,6 @@ sub main {
 	print STDERR 'going to build deb from ', join(', ', @to_make), "\n";
 
 	while (my $build = pop @to_make) {
-		# refresh the repository
-		chdir($repository_folder);
-		system('make', 'all') and die $!;
-		system('apt-pm', 'update') and die $!;
-		system('sudo', 'cowbuilder', '--update', '--bindmounts', '/var/cache/pbuilder/result/') and die $!;
-		
 		# clean-up build directory
 		remove_tree( $build_folder, {keep_root => 1} );
 
@@ -148,6 +153,22 @@ sub main {
 
 		copy($dist_tarball, $build_folder) or die "Copy failed: $!";;
 		$dist_tarball = basename($dist_tarball);
+		
+		# don't retry to build a tarball that failed build before
+		if ($no_build_retry and $build_history{$dist_tarball}->{'fail'}) {
+			print STDERR 'SKIP ', $dist_tarball,' previous build failed', "\n";
+			next;
+		}
+
+		# refresh the repository
+		chdir($repository_folder);
+		system('make', 'all') and die $!;
+		system('apt-pm', 'update') and die $!;
+		system('sudo', 'cowbuilder', '--update', '--bindmounts', '/var/cache/pbuilder/result/') and die $!;
+				
+		# mark current tarball as fail
+		$build_history{$dist_tarball}->{'fail'} = time();
+		JSON::Util->encode(\%build_history, [$build_history_filename], { 'atomic' => 1 });
 		
 		chdir($build_folder) or die $!;
 
@@ -191,6 +212,11 @@ sub main {
 		my $deb_basename = $1;
 		
 		system('mv', glob($deb_basename.'*'), '/var/cache/pbuilder/result/unstable') and die $!;
+
+		# mark current tarball as pass
+		delete $build_history{$dist_tarball}->{'fail'};
+		$build_history{$dist_tarball}->{'pass'} = time();
+		JSON::Util->encode(\%build_history, [$build_history_filename], { 'atomic' => 1 });
 	}
 	
 	

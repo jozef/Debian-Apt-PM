@@ -12,4 +12,5 @@
 /tmp/*
 /Debian-Apt-PM-*
 /cache/apt/apt-pm/*
+/sharedstate/dh-make-pm/*
 

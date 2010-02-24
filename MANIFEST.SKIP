@@ -35,4 +35,5 @@
 cache/apt/apt-pm/[^d]
 cache/apt/apt-pm/deb/[^.]
 cache/apt/apt-pm/deb-src/[^.]
+sharedstate/dh-make-pm/[^.]
 

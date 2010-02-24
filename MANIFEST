@@ -15,6 +15,7 @@ README
 script/apt-pm
 script/dh-make-pm
 script/dpkg-scanpmpackages
+sharedstate/dh-make-pm/.exists
 t/00_compile.t
 t/01_Debian-Apt-PM.t
 t/distribution.t

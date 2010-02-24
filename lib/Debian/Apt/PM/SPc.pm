@@ -15,6 +15,7 @@ use File::Spec;
 
 sub _path_types {qw(
 	cachedir
+	sharedstatedir
 )};
 
 =head1 PATHS
@@ -25,10 +26,15 @@ sub _path_types {qw(
 
 The Perl modules indexes are stored in F</var/cache/apt/apt-pm/> folder.
 
+=head2 sharedstatedir
+
+Used to store status of a tarball builds. (pass/fail)
+
 =cut
 
 sub prefix     { use Sys::Path; Sys::Path->find_distribution_root(__PACKAGE__); };
 sub cachedir   { File::Spec->catdir(__PACKAGE__->prefix, 'cache') };
+sub sharedstatedir { File::Spec->catdir(__PACKAGE__->prefix, 'sharedstate') };
 
 1;
 
