@@ -31,10 +31,10 @@ that can be reduced just to the wanted ones:
 
 	cat >> /etc/apt/sources.list << __END__
 	# for apt-pm
-	deb http://dbedia.com/Debian/mirror/ etch    main contrib non-free
-	deb http://dbedia.com/Debian/mirror/ lenny   main contrib non-free
-	deb http://dbedia.com/Debian/mirror/ sid     main contrib non-free
-	deb http://dbedia.com/Debian/mirror/ squeeze main contrib non-free
+	deb http://debian.meon.sk/mirror/ etch    main contrib non-free
+	deb http://debian.meon.sk/mirror/ lenny   main contrib non-free
+	deb http://debian.meon.sk/mirror/ sid     main contrib non-free
+	deb http://debian.meon.sk/mirror/ squeeze main contrib non-free
 	__END__
 
 Fetch the indexes:
@@ -78,11 +78,12 @@ use JSON::Util;
 use CPAN::Version;
 use Storable 'dclone';
 use List::MoreUtils 'uniq';
+use File::is;
 
 use Debian::Apt::PM::SPc;
 
 
-has 'sources'         => (is => 'rw', isa => 'ArrayRef', lazy => 1, default => sub { [ glob($_[0]->cachedir.'/*.json') ] });
+has 'sources'         => (is => 'rw', isa => 'ArrayRef', lazy => 1, default => sub { [ glob($_[0]->cachedir.'/all.index') ] });
 has '_modules_index'  => (is => 'rw', isa => 'HashRef', lazy => 1, default => sub { $_[0]->_create_modules_index });
 has '_apt_config'     => (is => 'rw', lazy => 1, default => sub { $AptPkg::Config::_config->init; $AptPkg::Config::_config; });
 has 'cachedir'        => (
@@ -233,6 +234,14 @@ sub update {
 		my $json_filename = $old_filename; $json_filename =~ s/\.bz2$/.json/;
 		unlink($old_filename, $json_filename);
 	}
+
+	my $index_filename = File::Spec->catfile($self->cachedir, 'all.index');
+	my $aptpm = Debian::Apt::PM->new(
+		cachedir => $self->cachedir,
+		sources  => [ glob($self->cachedir.'/*.json') ],
+	);
+	JSON::Util->encode($aptpm->_create_modules_index, [$index_filename])
+		if (not -f $index_filename) or File::is->older($index_filename, glob($self->cachedir.'/*.json'));
 }
 
 =head2 clean
@@ -342,6 +351,9 @@ sub _create_modules_index {
 				my $bz_content = IO::Any->slurp($src);
 				bunzip2 \$bz_content => \$content or die "bunzip2 failed: $Bunzip2Error\n";
 				@content_list = $self->_parse_perlpackages_content($content);
+			}
+			when (m/all\.index$/) {
+				return JSON::Util->decode([$src]);
 			}
 			when (m/\.json$/) {
 				@content_list = @{JSON::Util->decode([$src])};
