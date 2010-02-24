@@ -157,10 +157,8 @@ sub main {
 		$dist_tarball = basename($dist_tarball);
 		
 		# don't retry to build a tarball that failed build before
-		if ($no_build_retry and $build_history{$dist_tarball}->{'fail'}) {
-			print STDERR 'SKIP ', $dist_tarball,' previous build failed', "\n";
-			next;
-		}
+		die $dist_tarball.' previous build failed'
+			if ($no_build_retry and $build_history{$dist_tarball}->{'fail'});
 
 		# refresh the repository
 		chdir($repository_folder);
@@ -204,7 +202,12 @@ sub main {
 		remove_tree($debian_folder.'.orig');
 
 		chdir($debian_folder);
-		system('pdebuild', '--pbuilder', 'cowbuilder') and die $!;		
+		eval {
+			local $SIG{ALRM} = sub { die "alarm" };
+			alarm(30*60);
+			system('pdebuild', '--pbuilder', 'cowbuilder') and die $!;		
+			alarm(0);
+		};
 		
 		my ($generated_deb) = </var/cache/pbuilder/result/*.deb>;
 		die $dist_tarball.' deb build failed'
