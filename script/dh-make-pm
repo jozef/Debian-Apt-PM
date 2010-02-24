@@ -135,10 +135,12 @@ sub main {
 		my %prereq = find_prereq($to_make[$i++]);
 		foreach my $new_req (keys %prereq) {
 			if (not $all_prereq{$new_req}) {
-				$all_prereq{$new_req} = $prereq{$new_req};
+				$all_prereq{$new_req} = 1;
 				push @to_make, $new_req;
 			}
 		}
+		die 'too many pre requisities ('.join(',', @to_make).') for '.$module_name.' giving up'
+			if (@to_make > 100);
 	}
 	
 	print STDERR 'going to build deb from ', join(', ', @to_make), "\n";
