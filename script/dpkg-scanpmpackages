@@ -147,8 +147,17 @@ sub main {
 				#print 'processing ', $pm_file, "\n";
 				
 				$pm_file =~ s{^$tmp_dir.(.+)$}{$1};
+				
+				# FIXME auto add .pm files that are in /usr/share/perl5/ and friends with version 0
+				#       so it is able to locate those modules
+				
 				foreach my $package (keys %{$info->{'versions'}}) {
 					next if $package eq 'main';
+					
+					# skip inside packages
+					my $package_file = $package.'.pm';
+					$package_file =~ s{::}{/}xms;
+					next if substr($pm_file,0-length($package_file)) ne $package_file;
 					
 					# set version to undef 
 					my $version = (
@@ -157,7 +166,6 @@ sub main {
 						: 0
 					);
 					
-					# add version info to the provides only if it's not already there (we are interrested in the oldest package that has that version)
 					$provides{$deb_name}->{$package} = $version;
 				}
 			}
