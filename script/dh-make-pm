@@ -183,6 +183,7 @@ sub main {
 		
 		chdir($folder);
 		system('dh-make-perl') and die $!;
+		system('cpan-patches', 'update-debian') and die $!;
 		
 		my $changes_file = IO::Any->slurp('debian/changelog');
 		die 'failed to parse package name and version from debian/changelog'
