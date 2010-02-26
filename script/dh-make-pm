@@ -146,6 +146,8 @@ sub main {
 	print STDERR 'going to build deb from ', join(', ', @to_make), "\n";
 
 	while (my $build = pop @to_make) {
+		chdir(File::Spec->catdir($build_folder, '..'));
+		
 		# clean-up build directory
 		remove_tree( $build_folder, {keep_root => 1} );
 

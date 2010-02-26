@@ -156,7 +156,7 @@ sub main {
 					
 					# skip inside packages
 					my $package_file = $package.'.pm';
-					$package_file =~ s{::}{/}xms;
+					$package_file =~ s{::}{/}xmsg;
 					next if substr($pm_file,0-length($package_file)) ne $package_file;
 					
 					# set version to undef 
