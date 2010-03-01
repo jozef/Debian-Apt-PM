@@ -5,6 +5,11 @@ Changes
 examples/repo/Makefile
 examples/repo/Release.conf
 examples/repo/unstable/.exists
+examples/reprepo/.bash_profile
+examples/reprepo/bin/import-new-packages
+examples/reprepo/www/repo/.htaccess
+examples/reprepo/www/repo/conf/distributions
+examples/reprepo/www/repo/conf/uploaders
 lib/Debian/Apt/PM.pm
 lib/Debian/Apt/PM/SPc.pm
 MANIFEST			This list of files

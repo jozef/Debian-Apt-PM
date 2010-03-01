@@ -20,15 +20,15 @@ indexing and creating repository.
 
 =head1 pbuilder set-up
 
-	# add to /etc/pbuilderrc
-	MIRRORSITE=http://ftp.cz.debian.org/debian/
-	BINDMOUNTS="/var/cache/pbuilder/result"
-	PDEBUILD_PBUILDER=cowbuilder
-
 	# execute
 	sudo apt-get install cowdancer
 	cowbuilder --create --distribution sid
 	echo "dh-make-pm" > /var/cache/pbuilder/base.cow/etc/debian_chroot
+
+	# add to /etc/pbuilderrc
+	MIRRORSITE=http://ftp.cz.debian.org/debian/
+	BINDMOUNTS="/var/cache/pbuilder/result"
+	PDEBUILD_PBUILDER=cowbuilder
 	
 	mkdir /var/cache/pbuilder/result/unstable
 	wget http://bratislava.pm.org/tutorial/debian-simple-repo/Makefile -O /var/cache/pbuilder/result/Makefile
@@ -46,7 +46,12 @@ indexing and creating repository.
 	apt-key add -
 	exit
 
+	cd /var/cache/pbuilder/result/
+	make
+
 	cowbuilder --update --bindmounts /var/cache/pbuilder/result/
+	
+	cpan -i Debian::Apt::PM
 	
 	# patch DhMakePerl.pm
 	cd /usr/share/perl5/

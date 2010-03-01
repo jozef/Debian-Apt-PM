@@ -149,7 +149,7 @@ sub main {
 				$pm_file =~ s{^$tmp_dir.(.+)$}{$1};
 				
 				# FIXME auto add .pm files that are in /usr/share/perl5/ and friends with version 0
-				#       so it is able to locate those modules
+				#       so it is possible to locate those modules
 				
 				foreach my $package (keys %{$info->{'versions'}}) {
 					next if $package eq 'main';
