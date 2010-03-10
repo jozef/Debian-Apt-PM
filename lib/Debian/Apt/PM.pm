@@ -15,6 +15,17 @@ Cmd-line:
 	apt-pm update
 	apt-pm find Moose
 	dpkg-scanpmpackages /path/to/debian/repository
+	
+	# print out all dependencies of an unpacked distribution that are packaged for Debian
+	perl -MDebian::Apt::PM -MModule::Depends -le \
+		'$apm=Debian::Apt::PM->new();$md=Module::Depends->new->dist_dir(".")->find_modules; %r=(%{$md->requires},%{$md->build_requires}); while (($m, $v) = each %r) { $f=$apm->find($m, $v); print $f->{"min"}->{"package"} if $f->{"min"}  }' \
+		| sort \
+		| uniq \
+		| xargs echo apt-get install
+	# print out all dependencies of an unpacked distribution that are not packaged for Debian
+	perl -MDebian::Apt::PM -MModule::Depends -le \
+		'$apm=Debian::Apt::PM->new();$md=Module::Depends->new->dist_dir(".")->find_modules; %r=(%{$md->requires},%{$md->build_requires}); while (($m, $v) = each %r) { $f=$apm->find($m, $v); print $m, " ", $v if not $f->{"min"}  }'
+
 
 Module:
 
@@ -70,7 +81,7 @@ use Moose;
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
 use IO::Any;
 use Parse::Deb::Control 0.03;
-use Dpkg::Version 'version_compare';
+use Debian::Dpkg::Version 'version_compare';
 use AptPkg::Config '$_config';
 use LWP::Simple 'mirror', 'RC_OK';
 use Carp 'croak';

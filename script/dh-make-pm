@@ -8,7 +8,9 @@ dh-make-pm - build Debian packages (dh-make-perl on pbuilder+cowdancer  steroids
 
 	dh-make-pm --cpan Debian::Apt::PM
 	
-		--no-retry   will skip packaging modules that already failed to package
+		--cpan          which module to build
+		--no-retry      will skip packaging modules that already failed to package
+		--dh-make-perl  set different command to execute instead of dh-make-perl to create debian/ folder.
 
 =head1 DESCRIPTION
 
@@ -105,12 +107,16 @@ sub main {
 	my $repository_folder = '/var/cache/pbuilder/result';
 	my $build_folder      = File::Spec->catdir(File::HomeDir->my_home, '.dh-make-pm', 'build');
 	my $no_build_retry    = 0;
+	my $dh_make_perl      = 'dh-make-perl';
+	my $no_cpan_patches   = 0;
 	GetOptions(
 		'help|h'  => \$help,
 		'cpan=s'  => \$module_name,
 		'repo=s'  => \$repository_folder,
 		'build=s' => \$build_folder,
 		'no-retry' => \$no_build_retry,
+		'dh-make-perl=s' => \$dh_make_perl,
+		'no-cpan-patches' => \$no_cpan_patches,
 	) or pod2usage;
 	pod2usage if $help;
 	pod2usage if not $module_name;
@@ -168,9 +174,6 @@ sub main {
 			if ($no_build_retry and $build_history{$dist_tarball}->{'fail'});
 
 		# refresh the repository
-		chdir($repository_folder);
-		system('make', 'all') and die $!;
-		system('apt-pm', 'update') and die $!;
 		system('sudo', 'cowbuilder', '--update', '--bindmounts', '/var/cache/pbuilder/result/') and die $!;
 				
 		# mark current tarball as fail
@@ -189,8 +192,10 @@ sub main {
 		extract_dist_tarball($dist_tarball);
 		
 		chdir($folder);
-		system('dh-make-perl') and die $!;
-		system('cpan-patches', 'update-debian') and die $!;
+		system($dh_make_perl) and die $!;
+		if (not $no_cpan_patches) {
+			system('cpan-patches', 'update-debian') and die $!;
+		}
 		
 		my $changes_file = IO::Any->slurp('debian/changelog');
 		die 'failed to parse package name and version from debian/changelog'
@@ -230,6 +235,11 @@ sub main {
 		delete $build_history{$dist_tarball}->{'fail'};
 		$build_history{$dist_tarball}->{'pass'} = time();
 		JSON::Util->encode(\%build_history, [$build_history_filename], { 'atomic' => 1 });
+
+		# refresh repository and apt-pm index
+		chdir($repository_folder);
+		system('make', 'all') and die $!;
+		system('apt-pm', 'update') and die $!;
 	}
 	
 	
@@ -276,6 +286,9 @@ sub extract_dist_tarball {
 		}
 		when (/\.tar\.bz2$/) {
 			system('tar', 'xvjf', $dist_tarball);
+		}
+		when (/\.zip$/) {
+			system('unzip', $dist_tarball);
 		}
 		default {
 			die 'unsupported dist format - '.$dist_tarball;

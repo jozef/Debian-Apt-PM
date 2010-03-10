@@ -6,10 +6,10 @@ dpkg-scanpmpackages - creates PerlPackages index from .deb files
 
 =head1 SYNOPSIS
 
-	reprepro-update-perl-packages [repository_folder]
+	dpkg-scanpmpackages [repository_folder]
 	
-		--blacklist=comman,sep,package,names
-			optional - packages that should be not indexed
+		--blacklist=comma,separated,package,names
+			optional - packages that should not be indexed
 
 =head1 DESCRIPTION
 
