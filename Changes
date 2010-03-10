@@ -1,5 +1,11 @@
 Revision history for Debian-Apt-PM
 
+0.04
+   * s/Dpkg::Version/Debian::Dpkg::Version/
+   * Pod update
+   * no cpan-patches switch
+   * repository+apt-pm only after successful build
+
 0.03
     * dh-make-pm
     * DhMakePerl patch
