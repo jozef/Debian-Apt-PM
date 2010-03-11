@@ -61,14 +61,17 @@ sub main {
 	
 	my @blacklisted_pkgs = split(/\s*,\s*/, $blacklisted_pkgs_arg);
 
+	# loop through all Packages.bz2 that were found
 	foreach my $packages_file (@packages_files) {
 		print STDERR 'processing ', $packages_file, "\n";
 		
+		# read the Packages.bz2 content
 		my $packages_dir = dirname($packages_file);
 		my $packages_bz_content   = IO::Any->slurp($packages_file);
 		my $packages_file_content;
 		bunzip2 \$packages_bz_content => \$packages_file_content or die "bunzip2 failed: $Bunzip2Error\n";
 
+		# extract list of all .deb filenames
 		my %deb_to_src;
 		my $packages = Parse::Deb::Control->new($packages_file_content);
 		my @deb_files =
@@ -90,6 +93,7 @@ sub main {
 		my %provides;
 		my %deb_filenames;
 
+		# read the already processed packages
 		my $perl_packages_bz = File::Spec->catfile($packages_dir, 'PerlPackages.bz2');
 		if (-f $perl_packages_bz) {
 			my $perl_packages_bz_content = IO::Any->slurp($perl_packages_bz);
@@ -124,6 +128,7 @@ sub main {
 			$provides{$deb_name}      = {};
 			my $tmp_dir = tempdir();
 			
+			# extract .deb
 			system(
 				'dpkg',
 				'-x',
@@ -137,7 +142,8 @@ sub main {
 				->name( '*.pm' )
 				->in( $tmp_dir )
 			;
-					
+			
+			# find all package names from pm_files
 			foreach my $pm_file (@pm_files) {
 				# add version 0 based on filename, will be set properly later if found
 				if (my $inc_prefix = firstval { index($pm_file, $tmp_dir.$_) == 0 } @INC) {
@@ -245,8 +251,13 @@ sub _trim {
 
 __END__
 
-=head1 SEE ALSO
+=head1 AUTHOR
 
-L<Debian::Apt::PM>
+Jozef Kutej
+
+=head1 COPYRIGHT
+
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
 
 =cut
