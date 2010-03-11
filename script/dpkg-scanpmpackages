@@ -32,7 +32,7 @@ use File::Temp qw/ tempdir /;
 use File::Path 'remove_tree';
 use IO::Any 0.04;
 use Parse::Deb::Control 0.03;
-use List::MoreUtils 'any';
+use List::MoreUtils 'any', 'firstval';
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
 use Carp 'croak';
 
@@ -139,6 +139,14 @@ sub main {
 			;
 					
 			foreach my $pm_file (@pm_files) {
+				# add version 0 based on filename, will be set properly later if found
+				if (my $inc_prefix = firstval { index($pm_file, $tmp_dir.$_) == 0 } @INC) {
+					$inc_prefix = $tmp_dir.$inc_prefix;
+					my $package = substr($pm_file, length($inc_prefix)+1, -3);
+					$package =~ s{/}{::}xmsg;
+					$provides{$deb_name}->{$package} = 0;
+				}
+
 				# get module info
 				my $info = eval { Module::Build::ModuleInfo->new_from_file($pm_file) };
 				warn 'failed to get module info of "'.$pm_file.'" - "'.$@.'"' if $@;
@@ -147,9 +155,6 @@ sub main {
 				#print 'processing ', $pm_file, "\n";
 				
 				$pm_file =~ s{^$tmp_dir.(.+)$}{$1};
-				
-				# FIXME auto add .pm files that are in /usr/share/perl5/ and friends with version 0
-				#       so it is possible to locate those modules
 				
 				foreach my $package (keys %{$info->{'versions'}}) {
 					next if $package eq 'main';
