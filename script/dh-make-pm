@@ -8,9 +8,12 @@ dh-make-pm - build Debian packages (dh-make-perl on pbuilder+cowdancer  steroids
 
 	dh-make-pm --cpan Debian::Apt::PM
 	
-		--cpan          which module to build
-		--no-retry      will skip packaging modules that already failed to package
-		--dh-make-perl  set different command to execute instead of dh-make-perl to create debian/ folder.
+		--cpan              which module to build
+		--no-retry          will skip packaging modules that already failed to package
+		--dh-make-perl=s    set different command to execute instead of dh-make-perl to create debian/ folder.
+		--no-cpan-patches   do not apply CPAN::Patches
+		--tilde=s           string that should apper after version~ (ex. 2.00~string)
+		--debian-version	set debian version string, default is 1 (ex. 2.00-1)
 
 =head1 DESCRIPTION
 
@@ -109,6 +112,8 @@ sub main {
 	my $no_build_retry    = 0;
 	my $dh_make_perl      = 'dh-make-perl';
 	my $no_cpan_patches   = 0;
+	my $tilde             = '';
+	my $debian_pkg_version;
 	GetOptions(
 		'help|h'  => \$help,
 		'cpan=s'  => \$module_name,
@@ -117,9 +122,16 @@ sub main {
 		'no-retry' => \$no_build_retry,
 		'dh-make-perl=s' => \$dh_make_perl,
 		'no-cpan-patches' => \$no_cpan_patches,
+		'tilde=s' => \$tilde,
+		'debian-version=s' => \$debian_pkg_version,
 	) or pod2usage;
 	pod2usage if $help;
 	pod2usage if not $module_name;
+	
+	if ($tilde and defined $debian_pkg_version) {
+		print STDERR '--tilde and --debian-version can not be set both at the same time';
+		pod2usage;
+	}
 
 	my ($deb_in_root_of_repo) = </var/cache/pbuilder/result/*.deb>;
 	die $deb_in_root_of_repo.' left unsorted'
@@ -199,8 +211,23 @@ sub main {
 		
 		my $changes_file = IO::Any->slurp('debian/changelog');
 		die 'failed to parse package name and version from debian/changelog'
-			if $changes_file !~ m/\A([-a-z0-9]+) \s+ \(([^)]+)\)/xms;
-		my ($package_name, $package_version) = ($1, $2);
+			if $changes_file !~ m/ \A ([-a-z0-9]+) \s+ \( ([^)]+) \) (.+) \Z/xms;
+		my ($package_name, $package_version, $change_log_rest) = ($1, $2, $3);
+		
+		# update/set package version string
+		if ($tilde or (defined $debian_pkg_version)) {
+			if ($tilde) {
+				$package_version =~ s/~ .* $//xms;
+				$package_version =~ s/- .* $//xms;
+				$package_version .= '~'.$tilde;
+			}
+			elsif (defined $debian_pkg_version) {
+				$package_version =~ s/- .* $//xms;
+				$package_version .= '-'.$debian_pkg_version;
+			}
+			IO::Any->spew('debian/changelog', $package_name.' ('.$package_version.')'.$change_log_rest)
+		}
+		
 		chdir('..');
 		my $debian_folder = $package_name.'-'.$package_version;
 		$debian_folder =~ s/-[^-]+$//xms;    # strip debian packaging version
