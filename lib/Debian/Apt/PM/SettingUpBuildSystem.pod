@@ -24,14 +24,13 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 	sudo apt-get install debootstrap
 
 	sudo chown b /var/cache/apt/apt-pm/*
-	sudo bash -c 'echo "deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/ squeezy main contrib non-free" >> /etc/apt/sources.list'
+	sudo bash -c 'echo "deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/ lenny main contrib non-free" >> /etc/apt/sources.list'
 	apt-pm update
 
 	sudo chown b /var/lib/dh-make-pm
 	
 	cd /var/lib/cpan-patches/
-	sudo rmdir set
-	sudo git clone git://github.com/jozef/CPAN-Patches-Debian-Set.git set
+	sudo git clone git://github.com/jozef/CPAN-Patches-Debian-Set.git debian-set
 
 	sudo bash -c 'echo "deb-src http://ftp.at.debian.org/debian testing main" >> /etc/apt/sources.list'
 	sudo apt-get update

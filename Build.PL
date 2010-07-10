@@ -44,7 +44,7 @@ my $builder = Module::Build::SysPath->new(
         'CPAN'                    => 0,
         'File::is'                => 0,
         'CPAN::Patches'           => 0,
-        'CPAN::Patches::Plugin::Debian' => 0,
+        'CPAN::Patches::Plugin::Debian' => 0.03,    # stackable patch set folders
         'Module::Depends::Intrusive'    => 0,
     },
     script_files => [

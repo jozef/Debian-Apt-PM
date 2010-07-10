@@ -1,9 +1,11 @@
 Revision history for Debian-Apt-PM
 
 0.05
-    * --tilde added
-    * --debian-version added
+    * dh-make-pm --tilde added
+    * dh-make-pm --debian-version added
     * dh-make-pm will generate META.yml if not present
+    * dh-make-pm uses /var/lib/cpan-patches/set and /var/lib/cpan-patches/debian-set
+      to find patches
 
 0.04
     * s/Dpkg::Version/Debian::Dpkg::Version/

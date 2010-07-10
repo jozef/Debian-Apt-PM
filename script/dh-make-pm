@@ -99,6 +99,7 @@ use File::Copy 'copy';
 use JSON::Util;
 use Module::Depends::Intrusive;
 use CPAN::Patches;
+use CPAN::Patches::Plugin::Debian 0.03;    # needed for `cpan-patches --update-debian`
 
 use Debian::Apt::PM::SPc;
 use Debian::Apt::PM;
@@ -211,7 +212,12 @@ sub main {
 		chdir($folder);
 		system($dh_make_perl) and die $!;
 		if (not $no_cpan_patches) {
-			system('cpan-patches', 'update-debian') and die $!;
+			system(
+				'cpan-patches',
+				'--patch-set=/var/lib/cpan-patches/set',
+				'--patch-set=/var/lib/cpan-patches/debian-set',
+				'update-debian'
+			) and die $!;
 		}
 		
 		my $changes_file = IO::Any->slurp('debian/changelog');
