@@ -43,7 +43,9 @@ my $builder = Module::Build::SysPath->new(
         'File::Copy'              => 0,
         'CPAN'                    => 0,
         'File::is'                => 0,
+        'CPAN::Patches'           => 0,
         'CPAN::Patches::Plugin::Debian' => 0,
+        'Module::Depends::Intrusive'    => 0,
     },
     script_files => [
         'script/apt-pm',

@@ -3,6 +3,7 @@ Revision history for Debian-Apt-PM
 0.05
     * --tilde added
     * --debian-version added
+    * dh-make-pm will generate META.yml if not present
 
 0.04
     * s/Dpkg::Version/Debian::Dpkg::Version/

@@ -97,8 +97,10 @@ use CPAN;
 use File::Basename 'basename';
 use File::Copy 'copy';
 use JSON::Util;
-use Debian::Apt::PM::SPc;
+use Module::Depends::Intrusive;
+use CPAN::Patches;
 
+use Debian::Apt::PM::SPc;
 use Debian::Apt::PM;
 our $aptpm = Debian::Apt::PM->new();
 
@@ -203,6 +205,9 @@ sub main {
 		rename($folder, $folder.'.orig');
 		extract_dist_tarball($dist_tarball);
 		
+		# make sure we have META.yml dh-make-perl needs it
+		eval { CPAN::Patches->read_meta($folder) } || CPAN::Patches->read_meta_intrusive($folder);
+		
 		chdir($folder);
 		system($dh_make_perl) and die $!;
 		if (not $no_cpan_patches) {
@@ -285,7 +290,11 @@ sub find_prereq {
 		if not $dist;
 	
 	$dist->get;
-	my $meta = $dist->parse_meta_yml;
+	my $meta =
+		$dist->parse_meta_yml
+		|| Module::Depends::Intrusive->new->dist_dir( $dist->{"build_dir"} )->find_modules
+		|| die 'failed to resolv dependencies for '.$module_name
+	;
 	my %prereq = map { %{$meta->{$_} || {}} } qw(requires build_requires configure_requires recommends);
 
     my @debs;
