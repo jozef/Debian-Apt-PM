@@ -301,7 +301,21 @@ sub find_prereq {
 		|| Module::Depends::Intrusive->new->dist_dir( $dist->{"build_dir"} )->find_modules
 		|| die 'failed to resolv dependencies for '.$module_name
 	;
-	my %prereq = map { %{$meta->{$_} || {}} } qw(requires build_requires configure_requires recommends);
+	
+	my %prereq;
+	foreach my $req_type (qw(requires build_requires configure_requires recommends)) {
+		my %req = %{$meta->{$req_type} || {}};
+		while (my ($need_module, $need_version) = each %req) {
+			# we need the highest version of a module
+			next if (
+				(exists $prereq{$need_module})
+				and (CPAN::Version->vcmp($need_version, $prereq{$need_module}) != 1)
+			);
+			
+			$prereq{$need_module} = $need_version;
+		}
+		
+	}
 
     my @debs;
     my @build_dep;

@@ -6,6 +6,8 @@ Revision history for Debian-Apt-PM
     * dh-make-pm will generate META.yml if not present
     * dh-make-pm uses /var/lib/cpan-patches/set and /var/lib/cpan-patches/debian-set
       to find patches
+    * handles properly same module in diffrent types of require with
+      different versions properly
 
 0.04
     * s/Dpkg::Version/Debian::Dpkg::Version/
