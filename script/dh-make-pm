@@ -164,6 +164,10 @@ sub main {
 				$all_prereq{$new_req} = 1;
 				push @to_make, $new_req;
 			}
+			else {
+				# put the new_req that was already needed to the end (needs to be build first)
+				@to_make = ((grep { $_ ne $new_req } @to_make),  $new_req);
+			}
 		}
 		die 'too many pre requisities ('.join(',', @to_make).') for '.$module_name.' giving up'
 			if (@to_make > 100);
