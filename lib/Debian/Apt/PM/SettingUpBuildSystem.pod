@@ -13,14 +13,13 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 	adduser b &&echo 'b ALL=(ALL)NOPASSWD: ALL' >> /etc/sudoers
 	exit
 	chroot /var/tmp/let32 su - b
-	sudo apt-get install build-essential cowdancer dpkg-dev libapt-pkg-perl
+	sudo apt-get install libapt-pkg-perl
 	sudo apt-get install libyaml-perl libyaml-syck-perl libtext-diff-perl liblist-moreutils-perl
 	sudo apt-get install libfile-slurp-perl libtest-exception-perl libtest-differences-perl
 	sudo apt-get install libjson-xs-perl libmoose-perl libfile-chdir-perl
 	sudo apt-get install libpath-class-perl libtest-deep-perl libreadonly-perl
 	sudo apt-get install libfile-find-rule-perl libfile-homedir-perl libio-compress-bzip2-perl
-	sudo apt-get install xvfb po4a quilt dpatch
-	
+		
 	sudo cpan
 	# o conf connect_to_internet_ok yes
 	# o conf commit
@@ -44,6 +43,7 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 	sudo bash -c 'echo -e "Package: *\nPin: release a=stable\nPin-Priority: 700\n\nPackage: *\nPin: release a=testing\nPin-Priority: 600\n" >> /etc/apt/preferences'
 	sudo apt-get update
 	sudo apt-get install -t testing dh-make-perl debhelper
+	sudo apt-get install -t testing xvfb po4a quilt dpatch cdbs build-essential cowdancer dpkg-dev
 	
 	######
 	# probably not, backport those
@@ -58,6 +58,7 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 =head2 create cowbuilder for lenny
 
 	sudo debootstrap lenny /var/cache/pbuilder/base.cow
+	sudo bash -c 'echo "127.0.0.1"' > /var/cache/pbuilder/base.cow/etc/hosts'
 	sudo bash -c 'echo "deb file:///var/cache/pbuilder/result/ unstable/" >> /var/cache/pbuilder/base.cow/etc/apt/sources.list'
 	sudo bash -c 'echo "deb file:///var/cache/pbuilder/result/ unstable/" >> /etc/apt/sources.list'
 	cd /var/cache/pbuilder/result/
@@ -137,6 +138,22 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 	libdb4.7-dev    # Build-Depends: coreutils (>= 8.5)
 	perl
 
+=head2 backport libs/utilites
+
+	quilt
+	libxml2
+	libxslt1.1     # vim debian/control and add ^^^ version of libxml2
+	libxml-libxml-perl
+	libxml-libxslt-perl
+	
+	# apache
+	apr
+	libdb4.8
+	apr-util
+	openssl
+	apache2
+	libapache2-mod-perl2
+
 =head2 dh-make-pm
 
 	# not needed?  sudo apt-get install apt-file
@@ -149,7 +166,29 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 	patch -p1 < FromCPAN.pm.patch
 	perl Build.PL && ./Build test && sudo ./Build install
 
+=head2 start building
+
+=head3 build first
+
 	Test::Simple
 	Module::Build
+	Module::CoreList
+	
+
+	# for Class::MOP
+	Test::Output
+	Test::LeakTrace
+	SUPER
+	
+	# for POE
+	POE::Test::Loops
+
+	# misc
+	Test::Kwalitee
+	Test::Portability::Files
+
+=head3 then mass build
+
+	
 
 =cut
