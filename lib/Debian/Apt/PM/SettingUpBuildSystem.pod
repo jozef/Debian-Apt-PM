@@ -37,6 +37,8 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 	cd /var/lib/cpan-patches/
 	rmdir debian-set
 	sudo git clone git://github.com/jozef/CPAN-Patches-Debian-Set.git debian-set
+	rmdir set
+	sudo git clone git://github.com/jozef/CPAN-Patches-Example-Set.git set
 
 	sudo bash -c 'echo "deb     http://ftp.at.debian.org/debian testing main contrib" >> /etc/apt/sources.list'
 	sudo bash -c 'echo "deb-src http://ftp.at.debian.org/debian testing main contrib" >> /etc/apt/sources.list'
