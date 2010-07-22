@@ -100,6 +100,7 @@ use JSON::Util;
 use Module::Depends::Intrusive;
 use CPAN::Patches;
 use CPAN::Patches::Plugin::Debian 0.03;    # needed for `cpan-patches --update-debian`
+use POSIX 'SEEK_SET';
 
 use Debian::Apt::PM::SPc;
 use Debian::Apt::PM;
@@ -144,12 +145,7 @@ sub main {
 		if not -d $repository_folder;
 	die $build_folder.' folder does not exists'
 		if not -d $build_folder;
-	
-	my $build_history_filename = Debian::Apt::PM::SPc->sharedstatedir.'/dh-make-pm/build-history.json';
-	JSON::Util->encode({}, [$build_history_filename])
-		if not -f $build_history_filename;
-	my %build_history = %{JSON::Util->decode([$build_history_filename])};
-	
+		
 	my %all_prereq;
 	my @to_make = ($module_name);
 
@@ -190,14 +186,13 @@ sub main {
 		
 		# don't retry to build a tarball that failed build before
 		die $dist_tarball.' previous build failed'
-			if ($no_build_retry and $build_history{$dist_tarball}->{'fail'});
+			if ($no_build_retry and build_history($dist_tarball) ~~ 'fail');
 
 		# refresh the repository
 		system('sudo', 'cowbuilder', '--update', '--bindmounts', '/var/cache/pbuilder/result/') and die $!;
 				
 		# mark current tarball as fail
-		$build_history{$dist_tarball}->{'fail'} = time();
-		JSON::Util->encode(\%build_history, [$build_history_filename], { 'atomic' => 1 });
+		build_history($dist_tarball, 'fail');
 		
 		chdir($build_folder) or die $!;
 
@@ -274,9 +269,7 @@ sub main {
 		system('mv', glob($deb_basename.'*'), '/var/cache/pbuilder/result/unstable') and die $!;
 
 		# mark current tarball as pass
-		delete $build_history{$dist_tarball}->{'fail'};
-		$build_history{$dist_tarball}->{'pass'} = time();
-		JSON::Util->encode(\%build_history, [$build_history_filename], { 'atomic' => 1 });
+		build_history($dist_tarball, 'pass');
 
 		# refresh repository and apt-pm index
 		chdir($repository_folder);
@@ -354,4 +347,30 @@ sub extract_dist_tarball {
 			die 'unsupported dist format - '.$dist_tarball;
 		}
 	}
+}
+
+sub build_history {
+	my $tarball = shift;
+	my $status  = shift;
+	
+	state $build_history_filename = Debian::Apt::PM::SPc->sharedstatedir.'/dh-make-pm/build-history.json';
+
+	my $fh = IO::Any->new([$build_history_filename], '+>>', { 'LOCK_EX' => 1 });
+	seek($fh, 0, SEEK_SET);
+	my $json_string = do {local $/; <$fh>} || '{}';
+
+	my %build_history = %{JSON::Util->decode(\$json_string)};
+	
+	if ($status) {
+		$build_history{$tarball} ||= {};
+		delete $build_history{$tarball}->{'fail'};
+		delete $build_history{$tarball}->{'pass'};
+		$build_history{$tarball} = { $status => time() };
+		truncate($fh, 0);
+		print $fh JSON::Util->encode(\%build_history);
+	}
+	
+	close $fh;
+	
+	return $build_history{$tarball};
 }
