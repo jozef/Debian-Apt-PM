@@ -2,6 +2,7 @@ Build.PL
 cache/apt/apt-pm/deb-src/.exists
 cache/apt/apt-pm/deb/.exists
 Changes
+examples/mass-build
 examples/repo/Makefile
 examples/repo/Release.conf
 examples/repo/unstable/.exists
@@ -17,6 +18,7 @@ MANIFEST			This list of files
 META.yml
 patches/DhMakePerl.pm.patch
 patches/Distribution.pm.patch
+patches/FromCPAN.pm.patch
 README
 script/apt-pm
 script/dh-make-pm

@@ -16,7 +16,7 @@ repository:
 	gpg -abs -o unstable/Release.gpg unstable/Release
 
 move-new-packages:
-	mv *.deb *.gz *.bz2 *.changes *.dsc unstable/unsorted/ || /bin/true
+	mv *.deb *.udeb *.gz *.bz2 *.changes *.dsc unstable/unsorted/ || /bin/true
 
 clean:
 	rm -f unstable/Packages* unstable/Sources* unstable/Release* unstable/PerlPackages*

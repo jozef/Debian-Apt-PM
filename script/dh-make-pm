@@ -156,6 +156,7 @@ sub main {
 	while (@to_make > $i) {
 		my %prereq = find_prereq($to_make[$i++]);
 		foreach my $new_req (keys %prereq) {
+			$new_req =~ s/-/::/xmsg;     # some META.yml prereq has "-" insted of ::
 			if (not $all_prereq{$new_req}) {
 				$all_prereq{$new_req} = 1;
 				push @to_make, $new_req;
@@ -186,7 +187,7 @@ sub main {
 		
 		# don't retry to build a tarball that failed build before
 		die $dist_tarball.' previous build failed'
-			if ($no_build_retry and build_history($dist_tarball) ~~ 'fail');
+			if ($no_build_retry and build_history($dist_tarball)->{'fail'});
 
 		# refresh the repository
 		system('sudo', 'cowbuilder', '--update', '--bindmounts', '/var/cache/pbuilder/result/') and die $!;
@@ -283,9 +284,7 @@ sub main {
 
 sub find_prereq {
 	my $module_name = shift;
-	
-	return if $module_name ~~ ['perl'];
-	
+		
 	my $dist = CPAN::Shell->expand('Module', $module_name);
 	$dist = $dist->distribution
 		if $dist;
@@ -303,6 +302,8 @@ sub find_prereq {
 	foreach my $req_type (qw(requires build_requires configure_requires recommends)) {
 		my %req = %{$meta->{$req_type} || {}};
 		while (my ($need_module, $need_version) = each %req) {
+			return if $need_module ~~ ['perl'];
+
 			# we need the highest version of a module
 			next if (
 				(exists $prereq{$need_module})
@@ -372,5 +373,5 @@ sub build_history {
 	
 	close $fh;
 	
-	return $build_history{$tarball};
+	return $build_history{$tarball} || {};
 }

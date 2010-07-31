@@ -155,6 +155,7 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 	openssl
 	apache2
 	libapache2-mod-perl2
+	libwww-perl
 
 =head2 dh-make-pm
 
@@ -175,12 +176,20 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 	Test::Simple
 	Module::Build
 	Module::CoreList
-	
 
 	# for Class::MOP
 	Test::Output
 	Test::LeakTrace
 	SUPER
+	
+	# for Moose
+	FileHandle::Fmode
+	DBM::Deep
+	
+	# for Mouse
+	Class::Method::Modifiers
+	ExtUtils::ParseXS
+	Test::Exception
 	
 	# for POE
 	POE::Test::Loops
@@ -188,9 +197,12 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 	# misc
 	Test::Kwalitee
 	Test::Portability::Files
+	LWP
 
 =head3 then mass build
 
-	
+	Tatsumaki
+	Dancer
+	Silki
 
 =cut
