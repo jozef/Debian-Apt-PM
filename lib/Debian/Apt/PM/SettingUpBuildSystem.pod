@@ -156,6 +156,7 @@ SettingUpBuildSystem - How to set-up a chrooted build system
 	apache2
 	libapache2-mod-perl2
 	libwww-perl
+	libxml-sax-perl      # has a update-perl-sax-parsers script in debian/
 
 =head2 dh-make-pm
 

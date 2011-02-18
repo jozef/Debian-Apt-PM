@@ -143,6 +143,9 @@ sub main {
 				->in( $tmp_dir )
 			;
 			
+			# FIXME remove .pm files that are not in standard Perl @INC folders
+			#       this could be done probably based on a --perl-folders-only switch
+			
 			# find all package names from pm_files
 			foreach my $pm_file (@pm_files) {
 				# add version 0 based on filename, will be set properly later if found

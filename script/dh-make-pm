@@ -375,3 +375,10 @@ sub build_history {
 	
 	return $build_history{$tarball} || {};
 }
+
+__END__
+
+=head1 TODO
+
+    * when source Debian package already exists, get the source and backport
+    * build conflicts from the apt-file

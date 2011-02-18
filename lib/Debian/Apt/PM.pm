@@ -42,10 +42,10 @@ that can be reduced just to the wanted ones:
 
 	cat >> /etc/apt/sources.list << __END__
 	# for apt-pm
-	deb http://debian.meon.sk/mirror/ etch    main contrib non-free
-	deb http://debian.meon.sk/mirror/ lenny   main contrib non-free
-	deb http://debian.meon.sk/mirror/ sid     main contrib non-free
-	deb http://debian.meon.sk/mirror/ squeeze main contrib non-free
+	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/ etch    main contrib non-free
+	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/ lenny   main contrib non-free
+	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/ sid     main contrib non-free
+	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/ squeeze main contrib non-free
 	__END__
 
 Fetch the indexes:
