@@ -337,7 +337,9 @@ sub _parse_perlpackages_content {
 				? _trim($entry->{'para'}->{'Source'}) || _trim($entry->{'para'}->{'Package'})
 				: _trim($entry->{'para'}->{'Package'})
 			),
-			'arch'    => _trim($entry->{'para'}->{'Architecture'}),
+			'arch'         => _trim($entry->{'para'}->{'Architecture'}),
+			'distribution' => _trim($entry->{'para'}->{'Distribution'}),
+			'component'    => _trim($entry->{'para'}->{'Component'}),
 		);
 		
 		push @content_list, { modules => \%modules, deb => \%deb };
@@ -409,7 +411,7 @@ sub _trim {
 	my $text = shift;
 	croak 'too much argauments' if @_;
 	
-	return if not defined $text;
+	return '' if not defined $text;
 	
 	$text =~ s/^\s+//xms;
 	$text =~ s/\s+$//xms;

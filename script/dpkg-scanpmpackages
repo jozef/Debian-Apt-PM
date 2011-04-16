@@ -64,6 +64,15 @@ sub main {
 	# loop through all Packages.bz2 that were found
 	foreach my $packages_file (@packages_files) {
 		print STDERR 'processing ', $packages_file, "\n";
+
+		my $distribution = 'unstable';
+		my $component    = 'local';
+
+		my ($release) = eval { Parse::Deb::Control->new([dirname($packages_file), 'Release'])->get_paras('Archive') };
+		if ($release) {
+			$distribution = _trim($release->{'Archive'})   || $distribution;
+			$component    = _trim($release->{'Component'}) || $component;
+		}
 		
 		# read the Packages.bz2 content
 		my $packages_dir = dirname($packages_file);
@@ -202,6 +211,8 @@ sub main {
 					'Architecture: ', $arch, "\n",
 					'Filename: ', $deb_filenames{$deb_name}, "\n",
 					'Version: ', $version, "\n",
+					'Distribution: ', $distribution, "\n",
+					'Component: ', $component, "\n",
 					(
 						$deb_to_src{$deb_filenames{$deb_name}}
 						? ('Source: ', $deb_to_src{$deb_filenames{$deb_name}}, "\n")

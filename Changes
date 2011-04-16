@@ -9,6 +9,7 @@ Revision history for Debian-Apt-PM
     * handles properly same module in diffrent types of require with
       different versions properly
     * corrected order for packaging dependecies
+    * add distribution and component to package info
 
 0.04
     * s/Dpkg::Version/Debian::Dpkg::Version/

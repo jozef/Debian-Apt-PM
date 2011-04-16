@@ -54,14 +54,18 @@ sub main {
 		my $aptpm = Debian::Apt::PM->new(sources => [ File::Spec->catfile($Bin, 'PerlPackages.bz2') ]);
 		
 		my %deb1 = (
-			'version' => '5.230-1',
-			'package' => 'libanyevent-perl',
-			'arch'    => 'all',
+			'version'      => '5.230-1',
+			'package'      => 'libanyevent-perl',
+			'arch'         => 'all',
+			'distribution' => 'testing',
+			'component'    => 'main',
 		);
 		my %deb2 = (
-			'version' => '0.21-1',
-			'package' => 'libclass-c3-perl',
-			'arch'    => 'all',
+			'version'      => '0.21-1',
+			'package'      => 'libclass-c3-perl',
+			'arch'         => 'all',
+			'distribution' => 'testing',
+			'component'    => 'main',
 		);
 
 		eq_or_diff(
@@ -103,19 +107,25 @@ sub main {
 		]);
 
 		my %deb3 = (
-			'version' => '1.000-1',
-			'package' => 'libanyevent-perl',
-			'arch'    => 'all',
+			'version'      => '1.000-1',
+			'package'      => 'libanyevent-perl',
+			'arch'         => 'all',
+			'distribution' => 'testing',
+			'component'    => 'main',
 		);
 		my %deb4 = (
-			'version' => '0.22-1',
-			'package' => 'libclass-c3-perl',
-			'arch'    => 'all',
+			'version'      => '0.22-1',
+			'package'      => 'libclass-c3-perl',
+			'arch'         => 'all',
+			'distribution' => 'testing',
+			'component'    => 'main',
 		);
 		my %deb5 = (
-			'version' => '4.00-1',
-			'package' => 'libclass-c4-perl',
-			'arch'    => 'all',
+			'version'      => '4.00-1',
+			'package'      => 'libclass-c4-perl',
+			'arch'         => 'all',
+			'distribution' => 'testing',
+			'component'    => 'main',
 		);
 		my %result2 = (
 			'Class::C3' => {
@@ -186,14 +196,18 @@ sub main {
 		eq_or_diff(
 			$aptpm->find('AnyEvent'), {
 				'1.000' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '1.000-1'
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '1.000-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 				'5.23' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '5.230-1',
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '5.230-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				}
 			},
 			'find()',
@@ -202,24 +216,32 @@ sub main {
 		eq_or_diff(
 			$aptpm->find('AnyEvent', '0.01'), {
 				'1.000' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '1.000-1'
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '1.000-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 				'min' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '1.000-1'
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '1.000-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 				'5.23' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '5.230-1',
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '5.230-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 				'max' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '5.230-1',
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '5.230-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 			},
 			'find(min 0.01)',
@@ -228,24 +250,32 @@ sub main {
 		eq_or_diff(
 			$aptpm->find('AnyEvent', '1.50'), {
 				'1.000' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '1.000-1'
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '1.000-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 				'min' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '5.230-1',
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '5.230-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 				'5.23' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '5.230-1',
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '5.230-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 				'max' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '5.230-1',
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '5.230-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 			},
 			'find(min 1.50)',
@@ -256,17 +286,23 @@ sub main {
 				'1.000' => {
 					arch => 'all',
 					package => 'libanyevent-perl',
-					version => '1.000-1'
+					version => '1.000-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 				'5.23' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '5.230-1',
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '5.230-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 				'max' => {
-					arch => 'all',
-					package => 'libanyevent-perl',
-					version => '5.230-1',
+					'arch'         => 'all',
+					'package'      => 'libanyevent-perl',
+					'version'      => '5.230-1',
+					'distribution' => 'testing',
+					'component'    => 'main',
 				},
 				'min' => undef,
 			},
