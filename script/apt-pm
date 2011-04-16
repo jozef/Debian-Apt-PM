@@ -87,7 +87,25 @@ sub main {
 		
 		# print all available versions
 		foreach my $version (keys %{$version_info}) {
-			print $version_info->{$version}->{'package'}, '_', $version_info->{$version}->{'version'}, '_', $version_info->{$version}->{'arch'}, ': ', $package, ' ', $version, "\n";
+			my $distribution = $version_info->{$version}->{'distribution'} || 'unknown';
+			my $component    = $version_info->{$version}->{'component'} || 'unknown';
+			
+			print
+				$version_info->{$version}->{'package'},
+				'_',
+				$version_info->{$version}->{'version'},
+				'_',
+				$version_info->{$version}->{'arch'},
+				' ',
+				$distribution,
+				' ',
+				$component,
+				': ',
+				$package,
+				' ',
+				$version,
+				' ',
+				"\n";
 		}
 	}
 	
