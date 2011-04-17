@@ -7,6 +7,7 @@ apt-pm-web - generate json files for the CPAN package => Debian package mapping
 =head1 SYNOPSIS
 
 	apt-pm update
+	rm examples/web/CPAN/*.json
 	apt-pm-web -p $HOME/.cpan/sources/modules/02packages.details.txt.gz -o examples/web/
 	
 		--packages-file   a path to to the 02packages.details.txt.gz file

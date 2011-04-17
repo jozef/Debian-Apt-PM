@@ -16,26 +16,45 @@ cpan2deb.submitForm = function () {
 cpan2deb.search = function (q) {
 	var md5hex = hex_md5(q).toLowerCase();
 	var module_info_file = 'CPAN/'+md5hex.substring(0,2)+'.json';
+
+	$('input[type="submit"]').hide();
+	$('.load').show();
 	
 	$.ajax({ 
 		type: "GET",
    		url: module_info_file,
    		dataType: 'json',
-		success: function (data) { cpan2deb.show_module_info(q, data) },
-		error: function () { alert('failed to fetch module information') },
+		success: function (data) { cpan2deb.show_module_info(q, data); cpan2deb.searchFinish(); },
+		error: function () { alert('failed to fetch module information'); cpan2deb.searchFinish(); },
 	});
 }
 
+cpan2deb.searchFinish = function () {
+	$('.load').hide();
+	$('input[type="submit"]').show();
+}
+
 cpan2deb.show_module_info = function (module_name, module_info) {
-	var module_html = 'n/a';
-	var cpan_path = 'n/a';
-	var cpan_version = 'n/a';
-	var debs = [];
+	var module_html    = module_name;
+	var cpan_path_html = 'n/a';
+	var cpan_version   = 'n/a';
+	var debs = [
+		'This module is not packaged for Debian.<br/>'
+		+'There are 2 ways to fix this:<br/>'
+		+'<ul>'
+		+' <li>use `reportbug` and <a href="http://pkg-perl.alioth.debian.org/howto/RFP.html">fill-in RTP</a></li>'
+		+' <li><a href="http://pkg-perl.alioth.debian.org/">join Debian Perl Group</a> and help with packaging</li>'
+		+'</ul>'
+	];
 	
 	if (module_info[module_name]) {
-		cpan_path    = module_info[module_name].CPAN.path;
-		cpan_version = module_info[module_name].CPAN.version;
-		module_html  = '<a href="http://search.cpan.org/perldoc?'+encodeURIComponent(module_name)+'">'+module_name+'</a>';
+		cpan_path_html = '<a href="http://search.cpan.org/CPAN/authors/id/'+module_info[module_name].CPAN.path+'">'+module_info[module_name].CPAN.path+'</a>';
+		cpan_version   = module_info[module_name].CPAN.version;
+		module_html    = '<a href="http://search.cpan.org/perldoc?'+encodeURIComponent(module_name)+'">'+module_name+'</a>';
+		
+		if (module_info[module_name].Debian.length != 0) {
+			debs = [];
+		}
 		
 		for (i in module_info[module_name].Debian) {
 			var deb = module_info[module_name].Debian[i];
@@ -54,7 +73,7 @@ cpan2deb.show_module_info = function (module_name, module_info) {
 	}
 	
 	$('#cpanModuleName').html(module_html);
-	$('#cpanPath').text(cpan_path);
+	$('#cpanPath').html(cpan_path_html);
 	$('#cpanVersion').text(cpan_version);
 
 	$('#debianInfo').html('');

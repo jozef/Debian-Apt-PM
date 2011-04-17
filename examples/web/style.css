@@ -1,0 +1,22 @@
+h1 {
+    font-size: 2em;
+    padding: 0.5em 0;    
+}
+
+.searchInput {
+    padding: 0.5em 0;
+}
+
+.load {
+    display: none;
+}
+
+ul {
+    padding: 0.5em 0;
+    margin-left: 2em;
+}
+
+li {
+    list-style-type: circle;
+}
+
