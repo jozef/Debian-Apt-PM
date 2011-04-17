@@ -7,12 +7,15 @@ $(document).ready(function() {
 });
 
 cpan2deb.parseParams = function () {
-	var q = decodeURIComponent($.getURLParam("q"));
-
-	if (q) {
-		cpan2deb.module_name(q);
-		cpan2deb.submitForm();
+	var q = $.getURLParam("q");
+	
+	if (!q) {
+		return;
 	}
+	q = decodeURIComponent(q);
+
+	cpan2deb.module_name(q);
+	cpan2deb.submitForm();
 }
 
 cpan2deb.module_name = function (new_name) {
