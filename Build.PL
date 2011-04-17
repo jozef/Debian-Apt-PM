@@ -51,6 +51,7 @@ my $builder = Module::Build::SysPath->new(
     },
     script_files => [
         'script/apt-pm',
+        'script/apt-pm-web',
         'script/dpkg-scanpmpackages',
         'script/dh-make-pm',
     ],

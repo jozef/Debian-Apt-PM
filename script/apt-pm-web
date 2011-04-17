@@ -6,7 +6,15 @@ apt-pm-web - generate json files for the CPAN package => Debian package mapping
 
 =head1 SYNOPSIS
 
+	apt-pm update
+	apt-pm-web -p $HOME/.cpan/sources/modules/02packages.details.txt.gz -o examples/web/
+	
+		--packages-file   a path to to the 02packages.details.txt.gz file
+		--output-folder   a folder where the web json files should be generated
+
 =head1 DESCRIPTION
+
+Script that will generate json files that are needed for the mapping page.
 
 =cut
 
