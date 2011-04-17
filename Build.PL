@@ -46,6 +46,8 @@ my $builder = Module::Build::SysPath->new(
         'CPAN::Patches'           => 0,
         'CPAN::Patches::Plugin::Debian' => 0.03,    # stackable patch set folders
         'Module::Depends::Intrusive'    => 0,
+        'Digest::MD5'             => 0,
+        'CPAN::PackageDetails'    => 0,
     },
     script_files => [
         'script/apt-pm',

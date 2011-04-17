@@ -10,6 +10,7 @@ Revision history for Debian-Apt-PM
       different versions properly
     * corrected order for packaging dependecies
     * add distribution and component to package info
+    * basic CPAN => Debian package mapping web
 
 0.04
     * s/Dpkg::Version/Debian::Dpkg::Version/
