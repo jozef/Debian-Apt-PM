@@ -2,14 +2,40 @@ var cpan2deb = new Object;
 
 $(document).ready(function() {
 	$('form').submit(cpan2deb.submitForm);
+	$(window).bind('hashchange', cpan2deb.parseParams);
+	cpan2deb.parseParams();
 });
 
-cpan2deb.module_name = function () {
+cpan2deb.parseParams = function () {
+	var q = decodeURIComponent($.getURLParam("q"));
+
+	if (q) {
+		cpan2deb.module_name(q);
+		cpan2deb.submitForm();
+	}
+}
+
+cpan2deb.module_name = function (new_name) {
+	if (new_name) {
+		$('input[name="q"]').val(new_name);
+	}
+	
 	return $('input[name="q"]').val();
 }
 
 cpan2deb.submitForm = function () {
-	cpan2deb.search(cpan2deb.module_name());
+	var module_name = cpan2deb.module_name();
+	
+	var strHref = window.location.href;
+	strHref = strHref.replace(/#.+$/, '');
+	strHref = strHref.replace(/\?.+$/, '');
+	strHref = strHref+'#q='+encodeURIComponent(module_name);
+	if (window.location.href != strHref) {
+		window.location.href = strHref;
+		return false;
+	}
+
+	cpan2deb.search(module_name);
 	return false;
 }
 
