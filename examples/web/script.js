@@ -64,21 +64,24 @@ cpan2deb.show_module_info = function (module_name, module_info) {
 	var module_html    = module_name;
 	var cpan_path_html = 'n/a';
 	var cpan_version   = 'n/a';
-	var debs = [
-		'This module is not packaged for Debian.<br/>'
-		+'There are 2 ways to fix this:<br/>'
-		+'<ul>'
-		+' <li>use `reportbug` and <a href="http://pkg-perl.alioth.debian.org/howto/RFP.html">fill-in RTP</a></li>'
-		+' <li><a href="http://pkg-perl.alioth.debian.org/">join Debian Perl Group</a> and help with packaging</li>'
-		+'</ul>'
-	];
+	var debs = [];
 	
 	if (module_info[module_name]) {
 		cpan_path_html = '<a href="http://search.cpan.org/CPAN/authors/id/'+module_info[module_name].CPAN.path+'">'+module_info[module_name].CPAN.path+'</a>';
 		cpan_version   = module_info[module_name].CPAN.version;
 		module_html    = '<a href="http://search.cpan.org/perldoc?'+encodeURIComponent(module_name)+'">'+module_name+'</a>';
 		
-		if (module_info[module_name].Debian.length != 0) {
+		if (module_info[module_name].Debian.length == 0) {
+			debs = [
+				'This module is not packaged for Debian.<br/>'
+				+'There are 2 ways to fix this:<br/>'
+				+'<ul>'
+				+' <li>use `reportbug` and <a href="http://pkg-perl.alioth.debian.org/howto/RFP.html">fill-in RTP</a></li>'
+				+' <li><a href="http://pkg-perl.alioth.debian.org/">join Debian Perl Group</a> and help with packaging</li>'
+				+'</ul>'
+			];
+		}
+		else {
 			debs = [];
 		}
 		
