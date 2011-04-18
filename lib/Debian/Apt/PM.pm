@@ -253,7 +253,7 @@ sub update {
 		sources  => [ glob($self->cachedir.'/*.json') ],
 	);
 	JSON::Util->encode($aptpm->_create_modules_index, [$index_filename])
-		if (not -f $index_filename) or File::is->older($index_filename, glob($self->cachedir.'/*.json'));
+		if (not -f $index_filename) or File::is->older($index_filename, glob($self->cachedir.'/*.json')) or @existing;
 }
 
 =head2 clean
