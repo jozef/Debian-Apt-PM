@@ -42,6 +42,7 @@ that can be reduced just to the wanted ones:
 
 	cat >> /etc/apt/sources.list << __END__
 	# for apt-pm
+	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     lenny   main contrib non-free
 	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     squeeze main contrib non-free
 	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     wheezy  main contrib non-free
 	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     sid     main contrib non-free
