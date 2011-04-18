@@ -3,6 +3,11 @@ h1 {
     padding: 0.5em 0;    
 }
 
+h2 {
+    font-size: 1.3em;
+    padding: 0.5em 0;
+}
+
 .searchInput {
     padding: 0.5em 0;
 }
@@ -20,3 +25,10 @@ li {
     list-style-type: circle;
 }
 
+.generatedBy {
+    margin: 10em 0;
+    padding: 0.3em 0;
+    font-size: 75%;
+    text-align: center;
+    border-top: 1px solid #aaaaaa;
+}
