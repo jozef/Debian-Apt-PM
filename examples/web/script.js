@@ -93,7 +93,7 @@ cpan2deb.show_module_info = function (module_name, module_info) {
 			
 			debs.push(
 				'<div>'
-				+'Package: <a href="http://packages.debian.org/search?searchon=names&amp;suite=all&amp;section=all&amp;keywords='+encodeURIComponent(deb.package)+'">'+deb.package+'</a><br/>'
+				+'Package: <a href="http://packages.debian.org/search?searchon=names&amp;suite=all&amp;section=all&amp;keywords='+encodeURIComponent(deb.package)+'">'+deb.package+'</a> [<a href="http://bugs.debian.org/cgi-bin/pkgreport.cgi?pkg='+deb.package+';dist='+deb.distribution+'">bugs</a>] [<a href="http://patch-tracker.debian.org/package/'+deb.package+'">patches</a>]<br/>'
 				+'Package version: '+deb.version+'<br/>'
 				+'Module version: '+deb.perl_version+'<br/>'
 				+'Arch: '+deb.arch+'<br/>'
