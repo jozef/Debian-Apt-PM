@@ -10,7 +10,7 @@ EXPERIMENTAL => "use at your own risk"; B<< # you have bin warned >>
 
 =head1 SYNOPSIS
 
-Cmd-line:
+command line:
 
 	apt-pm update
 	apt-pm find Moose
@@ -258,7 +258,7 @@ sub update {
 
 =head2 clean
 
-Remove all files fom cache dir.
+Remove all files from cache folder.
 
 =cut
 

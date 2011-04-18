@@ -17,8 +17,8 @@ dh-make-pm - build Debian packages (dh-make-perl on pbuilder+cowdancer  steroids
 
 =head1 DESCRIPTION
 
-F<dh-make-pm> is basicaly recursive F<dh-make-perl> that will build the
-deb package from CPAN distribution and all it's dependecies properly
+F<dh-make-pm> is basically recursive F<dh-make-perl> that will build the
+deb package from CPAN distribution and all it's dependencies properly
 indexing and creating repository.
 
 =head1 USAGE

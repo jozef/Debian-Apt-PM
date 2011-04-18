@@ -5,7 +5,7 @@ NOTE
     EXPERIMENTAL => "use at your own risk"; # you have bin warned
 
 SYNOPSIS
-    Cmd-line:
+    command line:
 
             apt-pm update
             apt-pm find Moose
@@ -34,10 +34,11 @@ USAGE
 
             cat >> /etc/apt/sources.list << __END__
             # for apt-pm
-            deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/ etch    main contrib non-free
-            deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/ lenny   main contrib non-free
-            deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/ sid     main contrib non-free
-            deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/ squeeze main contrib non-free
+            deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     lenny   main contrib non-free
+            deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     squeeze main contrib non-free
+            deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     wheezy  main contrib non-free
+            deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     sid     main contrib non-free
+
             __END__
 
     Fetch the indexes:
@@ -131,7 +132,7 @@ METHODS
     All PerlPackages.bz2 are stored to /var/cache/apt/apt-pm/.
 
   clean
-    Remove all files fom cache dir.
+    Remove all files from cache folder.
 
 AUTHOR
     jozef@kutej.net, `<jkutej at cpan.org>'

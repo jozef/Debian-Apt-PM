@@ -1,6 +1,6 @@
 Revision history for Debian-Apt-PM
 
-0.05
+0.05    18 Apr 2011 (last day of QA Hackathon 2011 in Amsterdam)
     * dh-make-pm --tilde added
     * dh-make-pm --debian-version added
     * dh-make-pm will generate META.yml if not present

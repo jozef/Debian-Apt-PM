@@ -21,5 +21,19 @@ add_stopwords(qw(
 	CPAN
 	AnnoCPAN
 	http
+	pm
+	lenny
+	cowbuilder
+	backport
+	SettingUpBuildSystem
+	cachedir
+	sharedstatedir
+	dh
+	PerlPackages
+	dpkg
+	scanpmpackages
+	json
+	TODO
+	pbuilder
 ));
 all_pod_files_spelling_ok();
