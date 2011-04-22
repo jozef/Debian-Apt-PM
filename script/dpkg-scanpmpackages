@@ -114,7 +114,9 @@ sub main {
 				$filename =~ s/\s*$//;
 				$filename =~ s/^\s//;
 				my $para  = '';
-				foreach my $key (qw(Package Architecture Filename Version Source Perl-Modules)) {
+				$entry->{'para'}->{'Distribution'} ||= ' '.$distribution."\n";
+				$entry->{'para'}->{'Component'}    ||= ' '.$component."\n";
+				foreach my $key (qw(Package Architecture Filename Version Source Distribution Component Perl-Modules)) {
 					$para .= $key.':'.$entry->{'para'}->{$key}
 						if $entry->{'para'}->{$key};
 				}
