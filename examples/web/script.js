@@ -24,7 +24,10 @@ cpan2deb.module_name = function (new_name) {
 		$('input[name="q"]').val(new_name);
 	}
 	
-	return $('input[name="q"]').val();
+	// FIXME trim the val() !!!
+	var q = $('input[name="q"]').val();
+	q = q.replace(/^\s+|\s+$/g, '');
+	return q;
 }
 
 cpan2deb.submitForm = function () {
