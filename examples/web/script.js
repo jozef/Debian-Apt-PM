@@ -4,6 +4,7 @@ $(document).ready(function() {
 	$('form').submit(cpan2deb.submitForm);
 	$(window).bind('hashchange', cpan2deb.parseParams);
 	cpan2deb.parseParams();
+	$('input[type="search"]').focus();
 });
 
 cpan2deb.parseParams = function () {
@@ -61,6 +62,7 @@ cpan2deb.search = function (q) {
 cpan2deb.searchFinish = function () {
 	$('.load').hide();
 	$('input[type="submit"]').show();
+	$('input[type="search"]').focus();
 }
 
 cpan2deb.show_module_info = function (module_name, module_info) {
