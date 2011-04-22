@@ -84,8 +84,8 @@ cpan2deb.show_module_info = function (module_name, module_info) {
 				'This module is not packaged for Debian.<br/>'
 				+'There are 2 ways to fix this:<br/>'
 				+'<ul>'
-				+' <li>use `reportbug` and <a href="http://pkg-perl.alioth.debian.org/howto/RFP.html">file an RTP</a></li>'
-				+' <li><a href="http://wiki.debian.org/Teams/DebianPerlGroup/Welcome">join the Debian Perl Group</a> and help with packaging</li>'
+				+' <li>Use `reportbug wnpp` tod <a href="http://pkg-perl.alioth.debian.org/howto/RFP.html">file an RTP</a>.</li>'
+				+' <li><a href="http://wiki.debian.org/Teams/DebianPerlGroup/Welcome">Join the Debian Perl Group</a> and help with packaging</li>.'
 				+'</ul>'
 			];
 		}
