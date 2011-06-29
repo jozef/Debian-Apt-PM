@@ -10,6 +10,10 @@ dpkg-scanpmpackages - creates PerlPackages index from .deb files
 	
 		--blacklist=comma,separated,package,names
 			optional - packages that should not be indexed
+		--pool-url=http://ftp.cz.debian.org/debian/
+		    optional - an url to fetch missing .deb files from
+		--cleanup-deb
+		    optional - when set will remove .deb file after it was processed
 
 =head1 DESCRIPTION
 
@@ -35,6 +39,7 @@ use Parse::Deb::Control 0.03;
 use List::MoreUtils 'any', 'firstval';
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
 use Carp 'croak';
+use LWP::UserAgent;
 
 exit main();
 
@@ -42,9 +47,13 @@ sub main {
 	my $help;
 	my $use_old_index;
 	my $blacklisted_pkgs_arg = 'r-cran-gdata';
+	my $pool_url;
+	my $cleanup_deb;
 	GetOptions(
 		'help|h'      => \$help,
 		'blacklist=s' => \$blacklisted_pkgs_arg,
+		'pool-url=s'  => \$pool_url,
+		'cleanup-deb' => \$cleanup_deb,
 	) or pod2usage;
 	pod2usage if $help;
 	
@@ -86,7 +95,7 @@ sub main {
 		my @deb_files =
 			grep {
 				die $_.' from '.$packages_file.' does not exists'
-					if ! -f File::Spec->catfile($mirror_location, $_);
+					if ((! -f File::Spec->catfile($mirror_location, $_)) and !$pool_url);
 				1;
 			}
 			map { _trim($_->{'para'}->{'Filename'}) }
@@ -139,11 +148,25 @@ sub main {
 			$provides{$deb_name}      = {};
 			my $tmp_dir = tempdir();
 			
+			my $deb_full_filename = File::Spec->catfile($mirror_location, $deb_file);
+			
+			# fetch the deb file if not in the mirror
+			if (not -f $deb_full_filename) {
+				die 'no mirror url set and '.$deb_full_filename.' not found'
+					if not $pool_url;
+				
+				my $deb_full_path = dirname($deb_full_filename);
+				system('mkdir', '-p', $deb_full_path)
+					if not -d $deb_full_path;
+				
+				fetch($pool_url.$deb_file, $deb_full_filename);
+			}
+			
 			# extract .deb
 			system(
 				'dpkg',
 				'-x',
-				File::Spec->catfile($mirror_location, $deb_file),
+				$deb_full_filename,
 				$tmp_dir,
 			);
 			
@@ -195,7 +218,9 @@ sub main {
 				}
 			}
 			
-			remove_tree($tmp_dir);		
+			remove_tree($tmp_dir);
+			unlink($deb_full_filename)
+				if $cleanup_deb;	
 		}
 
 		# write PerlPackages.tmp
@@ -253,6 +278,24 @@ sub main {
 	}
 
 	return 0;
+}
+
+sub fetch {
+	my $url      = shift;
+	my $filename = shift;
+	
+	my $ua = LWP::UserAgent->new;
+	$ua->timeout(10);
+	$ua->env_proxy;
+	 
+	my $response = $ua->get($url);
+	
+	die 'failed to fetch '.$url.' - '.$response->status_line
+		if (not $response->is_success);
+	
+	IO::Any->spew([ $filename ], $response->decoded_content);
+	
+	return;
 }
 
 sub _trim {

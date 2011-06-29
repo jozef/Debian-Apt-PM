@@ -9,7 +9,7 @@ Acme::SysPath::SPc - build-time system path configuration
 use warnings;
 use strict;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use File::Spec;
 
