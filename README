@@ -131,6 +131,10 @@ METHODS
     repositories for PerlPackages.bz2 and prepares them to be used for find.
     All PerlPackages.bz2 are stored to /var/cache/apt/apt-pm/.
 
+    It also fetches
+    http://pkg-perl.alioth.debian.org/cpan2deb/CPAN/02packages.dependencies.
+    txt.gz to be used by `apt-cpan'.
+
   clean
     Remove all files from cache folder.
 

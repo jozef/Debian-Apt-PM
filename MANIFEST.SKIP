@@ -35,5 +35,7 @@
 cache/apt/apt-pm/[^d]
 cache/apt/apt-pm/deb/[^.]
 cache/apt/apt-pm/deb-src/[^.]
+cache/apt/apt-pm/dist-dependencies.json
 sharedstate/dh-make-pm/[^.]
 examples/web/CPAN/.+\.json
+^MYMETA\.json$
