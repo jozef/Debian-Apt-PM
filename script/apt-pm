@@ -1,29 +1,5 @@
 #!/usr/bin/perl
 
-=head1 NAME
-
-apt-pm - locate Perl Modules in Debian repositories
-
-=head1 SYNOPSIS
-
-	apt-pm search Moose::Meta::Role
-	apt-pm update
-	apt-pm clean
-	
-options:
-
-	--sources
-		comman separated list of index files to use for search/find
-	--deb-src
-		search in source repositories
-
-=head1 DESCRIPTION
-
-Lookup Perl package in Debian .deb files.
-
-=cut
-
-
 use strict;
 use warnings;
 
@@ -113,6 +89,27 @@ sub main {
 }
 
 __END__
+
+=head1 NAME
+
+apt-pm - locate Perl Modules in Debian repositories
+
+=head1 SYNOPSIS
+
+	apt-pm search Moose::Meta::Role
+	apt-pm update
+	apt-pm clean
+	
+options:
+
+	--sources
+		comman separated list of index files to use for search/find
+	--deb-src
+		search in source repositories
+
+=head1 DESCRIPTION
+
+Lookup Perl package in Debian .deb files.
 
 =head1 SEE ALSO
 

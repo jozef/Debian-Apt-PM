@@ -1,76 +1,5 @@
 package Debian::Apt::PM;
 
-=head1 NAME
-
-Debian::Apt::PM - locate Perl Modules in Debian repositories
-
-=head1 NOTE
-
-EXPERIMENTAL => "use at your own risk"; B<< # you have bin warned >>
-
-=head1 SYNOPSIS
-
-command line:
-
-	apt-pm update
-	apt-pm find Moose
-	dpkg-scanpmpackages /path/to/debian/repository
-	
-	# print out all dependencies of an unpacked distribution that are packaged for Debian
-	perl -MDebian::Apt::PM -MModule::Depends -le \
-		'$apm=Debian::Apt::PM->new();$md=Module::Depends->new->dist_dir(".")->find_modules; %r=(%{$md->requires},%{$md->build_requires}); while (($m, $v) = each %r) { $f=$apm->find($m, $v); print $f->{"min"}->{"package"} if $f->{"min"}  }' \
-		| sort \
-		| uniq \
-		| xargs echo apt-get install
-	# print out all dependencies of an unpacked distribution that are not packaged for Debian
-	perl -MDebian::Apt::PM -MModule::Depends -le \
-		'$apm=Debian::Apt::PM->new();$md=Module::Depends->new->dist_dir(".")->find_modules; %r=(%{$md->requires},%{$md->build_requires}); while (($m, $v) = each %r) { $f=$apm->find($m, $v); print $m, " ", $v if not $f->{"min"}  }'
-
-
-Module:
-
-	my $aptpm = Debian::Apt::PM->new(sources => [ 'PerlPackages.bz2' ])
-	$aptpm->update;
-	my %moose_locations = $aptpm->find('Moose');
-
-=head1 USAGE
-
-=head2 COMMAND-LINE USAGE
-
-Add sources for Debian releases and components. Here is the complete list
-that can be reduced just to the wanted ones:
-
-	cat >> /etc/apt/sources.list << __END__
-	# for apt-pm
-	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     lenny   main contrib non-free
-	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     squeeze main contrib non-free
-	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     wheezy  main contrib non-free
-	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     sid     main contrib non-free
-
-	__END__
-
-Fetch the indexes:
-
-	apt-pm update
-
-Look for the CPAN modules:
-
-	apt-pm find Moose
-	# libmoose-perl_0.17-1_all: Moose 0.17
-	# libmoose-perl_0.94-1_i386: Moose 0.94
-	# libmoose-perl_0.97-1_i386: Moose 0.97
-	# libmoose-perl_0.54-1_all: Moose 0.54
-
-Look for the non-CPAN modules:
-	
-	apt-pm find Purple        
-	# libpurple0_2.4.3-4lenny5_i386: Purple 0.01
-	
-	apt-pm find Dpkg::Version
-	# dpkg-dev_1.14.28_all: Dpkg::Version 0
-
-=cut
-
 use warnings;
 use strict;
 
@@ -111,84 +40,6 @@ has 'repo_type'       => (is => 'rw', lazy => 1, default => 'deb');
 has 'packages_dependencies_url'
                       => (is => 'rw', lazy => 1, default => 'http://pkg-perl.alioth.debian.org/cpan2deb/CPAN/02packages.dependencies.txt.gz');
 
-
-=head1 METHODS
-
-=head2 new()
-
-Object constructor.
-
-=head3 PROPERTIES
-
-=over 4
-
-=item sources
-
-C<< isa => 'ArrayRef' >> of files that will be read to construct the lookup.
-By default it is filled with files from F</var/cache/apt/apt-pm/>.
-
-=item cachedir
-
-Is the folder where indexes cache files will be stored.
-Default is F</var/cache/apt/apt-pm/deb/>.
-
-=item repo_type
-
-C<deb|deb-src>
-
-=back
-
-=head2 find($module_name, [$min_version])
-
-Returns hash with Perl versions as key and hash value having Debian version
-and package name. Example:
-
-	{
-		'0.94' => {
-			'version' => '0.94-1',
-			'package' => 'libmoose-perl'
-			'arch'    => 'i386'
-		},
-		'0.97' => {
-			'version' => '0.97-1',
-			'package' => 'libmoose-perl'
-			'arch'    => 'i386'
-		},
-		'0.54' => {
-			'version' => '0.54-1',
-			'package' => 'libmoose-perl'
-			'arch'    => 'i386'
-		},
-	};
-
-If C<$min_version> is set, returns C<min> and C<max> keys. C<max> has always
-the highest version:
-
-	'max' => {
-		'version' => '0.97-1',
-		'package' => 'libmoose-perl'
-		'arch'    => 'i386'
-	},
-
-C<min> is changing depending on C<$min_version>. Examples:
-
-	$min_version = '0.01';
-	'min' => {
-		'version' => '0.54-1',
-		'package' => 'libmoose-perl'
-		'arch'    => 'i386'
-	},
-	$min_version = '0.93';
-	'min' => {
-		'version' => '0.94-1',
-		'package' => 'libmoose-perl'
-		'arch'    => 'i386'
-	},
-	$min_version = '1.00';
-	'min' => undef,
-
-=cut
-
 sub find {
 	my $self        = shift;
 	my $module      = shift;
@@ -216,17 +67,6 @@ sub find {
 	
 	return $versions_info;
 }
-
-=head2 update
-
-Scans the F</etc/apt/sources.list> and F</etc/apt/sources.list.d/*.list>
-repositories for F<PerlPackages.bz2> and prepares them to be used for find.
-All F<PerlPackages.bz2> are stored to F</var/cache/apt/apt-pm/>.
-
-It also fetches L<http://pkg-perl.alioth.debian.org/cpan2deb/CPAN/02packages.dependencies.txt.gz>
-to be used by C<apt-cpan>.
-
-=cut
 
 sub update {
 	my $self = shift;
@@ -262,12 +102,6 @@ sub update {
 	
 	mirror($self->packages_dependencies_url, $self->_packages_dependencies_filename);
 }
-
-=head2 clean
-
-Remove all files from cache folder.
-
-=cut
 
 sub clean {
 	my $self = shift;
@@ -436,6 +270,163 @@ sub _trim {
 
 
 __END__
+
+=head1 NAME
+
+Debian::Apt::PM - locate Perl Modules in Debian repositories
+
+=head1 NOTE
+
+EXPERIMENTAL => "use at your own risk"; B<< # you have bin warned >>
+
+=head1 SYNOPSIS
+
+command line:
+
+	apt-pm update
+	apt-pm find Moose
+	dpkg-scanpmpackages /path/to/debian/repository
+	
+	# print out all dependencies of an unpacked distribution that are packaged for Debian
+	perl -MDebian::Apt::PM -MModule::Depends -le \
+		'$apm=Debian::Apt::PM->new();$md=Module::Depends->new->dist_dir(".")->find_modules; %r=(%{$md->requires},%{$md->build_requires}); while (($m, $v) = each %r) { $f=$apm->find($m, $v); print $f->{"min"}->{"package"} if $f->{"min"}  }' \
+		| sort \
+		| uniq \
+		| xargs echo apt-get install
+	# print out all dependencies of an unpacked distribution that are not packaged for Debian
+	perl -MDebian::Apt::PM -MModule::Depends -le \
+		'$apm=Debian::Apt::PM->new();$md=Module::Depends->new->dist_dir(".")->find_modules; %r=(%{$md->requires},%{$md->build_requires}); while (($m, $v) = each %r) { $f=$apm->find($m, $v); print $m, " ", $v if not $f->{"min"}  }'
+
+
+Module:
+
+	my $aptpm = Debian::Apt::PM->new(sources => [ 'PerlPackages.bz2' ])
+	$aptpm->update;
+	my %moose_locations = $aptpm->find('Moose');
+
+=head1 USAGE
+
+=head2 COMMAND-LINE USAGE
+
+Add sources for Debian releases and components. Here is the complete list
+that can be reduced just to the wanted ones:
+
+	cat >> /etc/apt/sources.list << __END__
+	# for apt-pm
+	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     lenny   main contrib non-free
+	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     squeeze main contrib non-free
+	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     wheezy  main contrib non-free
+	deb http://pkg-perl.alioth.debian.org/~jozef-guest/pmindex/     sid     main contrib non-free
+
+	__END__
+
+Fetch the indexes:
+
+	apt-pm update
+
+Look for the CPAN modules:
+
+	apt-pm find Moose
+	# libmoose-perl_0.17-1_all: Moose 0.17
+	# libmoose-perl_0.94-1_i386: Moose 0.94
+	# libmoose-perl_0.97-1_i386: Moose 0.97
+	# libmoose-perl_0.54-1_all: Moose 0.54
+
+Look for the non-CPAN modules:
+	
+	apt-pm find Purple        
+	# libpurple0_2.4.3-4lenny5_i386: Purple 0.01
+	
+	apt-pm find Dpkg::Version
+	# dpkg-dev_1.14.28_all: Dpkg::Version 0
+
+=head1 METHODS
+
+=head2 new()
+
+Object constructor.
+
+=head3 PROPERTIES
+
+=over 4
+
+=item sources
+
+C<< isa => 'ArrayRef' >> of files that will be read to construct the lookup.
+By default it is filled with files from F</var/cache/apt/apt-pm/>.
+
+=item cachedir
+
+Is the folder where indexes cache files will be stored.
+Default is F</var/cache/apt/apt-pm/deb/>.
+
+=item repo_type
+
+C<deb|deb-src>
+
+=back
+
+=head2 find($module_name, [$min_version])
+
+Returns hash with Perl versions as key and hash value having Debian version
+and package name. Example:
+
+	{
+		'0.94' => {
+			'version' => '0.94-1',
+			'package' => 'libmoose-perl'
+			'arch'    => 'i386'
+		},
+		'0.97' => {
+			'version' => '0.97-1',
+			'package' => 'libmoose-perl'
+			'arch'    => 'i386'
+		},
+		'0.54' => {
+			'version' => '0.54-1',
+			'package' => 'libmoose-perl'
+			'arch'    => 'i386'
+		},
+	};
+
+If C<$min_version> is set, returns C<min> and C<max> keys. C<max> has always
+the highest version:
+
+	'max' => {
+		'version' => '0.97-1',
+		'package' => 'libmoose-perl'
+		'arch'    => 'i386'
+	},
+
+C<min> is changing depending on C<$min_version>. Examples:
+
+	$min_version = '0.01';
+	'min' => {
+		'version' => '0.54-1',
+		'package' => 'libmoose-perl'
+		'arch'    => 'i386'
+	},
+	$min_version = '0.93';
+	'min' => {
+		'version' => '0.94-1',
+		'package' => 'libmoose-perl'
+		'arch'    => 'i386'
+	},
+	$min_version = '1.00';
+	'min' => undef,
+
+=head2 update
+
+Scans the F</etc/apt/sources.list> and F</etc/apt/sources.list.d/*.list>
+repositories for F<PerlPackages.bz2> and prepares them to be used for find.
+All F<PerlPackages.bz2> are stored to F</var/cache/apt/apt-pm/>.
+
+It also fetches L<http://pkg-perl.alioth.debian.org/cpan2deb/CPAN/02packages.dependencies.txt.gz>
+to be used by C<apt-cpan>.
+
+=head2 clean
+
+Remove all files from cache folder.
 
 =head1 AUTHOR
 
