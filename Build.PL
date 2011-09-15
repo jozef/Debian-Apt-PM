@@ -48,6 +48,10 @@ my $builder = Module::Build::SysPath->new(
         'Module::Depends::Intrusive'    => 0,
         'Digest::MD5'             => 0,
         'CPAN::PackageDetails'    => 0,
+        'MetaCPAN::API'           => 0,
+        'IO::Uncompress::Gunzip'  => 0,
+        'CPAN'                    => 0,
+        'CPAN::Module'            => 0,
     },
     script_files => [
         'script/apt-pm',

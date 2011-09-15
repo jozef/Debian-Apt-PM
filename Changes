@@ -2,6 +2,8 @@ Revision history for Debian-Apt-PM
 
 0.06    29 Jun 2011
     * not need for full mirror any more, deb-s can be dowloaded on demand
+    * 02packages.dependencies.txt.gz generation in apt-pm-web
+    * add apt-cpan script
 
 0.05    18 Apr 2011 (last day of QA Hackathon 2011 in Amsterdam)
     * dh-make-pm --tilde added

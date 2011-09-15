@@ -108,6 +108,8 @@ has 'cachedir'        => (
 	}
 );
 has 'repo_type'       => (is => 'rw', lazy => 1, default => 'deb');
+has 'packages_dependencies_url'
+                      => (is => 'rw', lazy => 1, default => 'http://pkg-perl.alioth.debian.org/cpan2deb/CPAN/02packages.dependencies.txt.gz');
 
 
 =head1 METHODS
@@ -221,6 +223,9 @@ Scans the F</etc/apt/sources.list> and F</etc/apt/sources.list.d/*.list>
 repositories for F<PerlPackages.bz2> and prepares them to be used for find.
 All F<PerlPackages.bz2> are stored to F</var/cache/apt/apt-pm/>.
 
+It also fetches L<http://pkg-perl.alioth.debian.org/cpan2deb/CPAN/02packages.dependencies.txt.gz>
+to be used by C<apt-cpan>.
+
 =cut
 
 sub update {
@@ -254,6 +259,8 @@ sub update {
 	);
 	JSON::Util->encode($aptpm->_create_modules_index, [$index_filename])
 		if (not -f $index_filename) or File::is->older($index_filename, glob($self->cachedir.'/*.json')) or @existing;
+	
+	mirror($self->packages_dependencies_url, $self->_packages_dependencies_filename);
 }
 
 =head2 clean
@@ -268,6 +275,11 @@ sub clean {
 	foreach my $filename (glob($self->cachedir.'/*')) {
 		unlink($filename) or warn 'failed to remove '.$filename."\n";
 	}
+	unlink($self->_packages_dependencies_filename);
+}
+
+sub _packages_dependencies_filename {
+	return $_[0]->cachedir.'/../02packages.dependencies.txt.gz';
 }
 
 sub _etc_apt_sources {
