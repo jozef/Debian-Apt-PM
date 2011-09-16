@@ -35,5 +35,7 @@ add_stopwords(qw(
 	json
 	TODO
 	pbuilder
+	cpan
+	fallback
 ));
 all_pod_files_spelling_ok();

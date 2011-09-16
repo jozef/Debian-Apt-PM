@@ -1,6 +1,9 @@
 Revision history for Debian-Apt-PM
 
-0.06    29 Jun 2011
+0.07    16 Sep 2011
+    * distribution fixes
+
+0.06    15 Sep 2011
     * not need for full mirror any more, deb-s can be dowloaded on demand
     * 02packages.dependencies.txt.gz generation in apt-pm-web
     * add apt-cpan script

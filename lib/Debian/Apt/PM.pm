@@ -3,7 +3,7 @@ package Debian::Apt::PM;
 use warnings;
 use strict;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use 5.010;
 
@@ -427,6 +427,10 @@ to be used by C<apt-cpan>.
 =head2 clean
 
 Remove all files from cache folder.
+
+=head1 SEE ALSO
+
+L<http://pkg-perl.alioth.debian.org/cpan2deb/>
 
 =head1 AUTHOR
 
