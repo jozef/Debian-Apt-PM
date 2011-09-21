@@ -277,7 +277,7 @@ Debian::Apt::PM - locate Perl Modules in Debian repositories
 
 =head1 NOTE
 
-EXPERIMENTAL => "use at your own risk"; B<< # you have bin warned >>
+Needs following extra Debian packages C<libdpkg-perl> and C<libapt-pkg-perl>.
 
 =head1 SYNOPSIS
 

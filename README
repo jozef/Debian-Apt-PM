@@ -2,7 +2,8 @@ NAME
     Debian::Apt::PM - locate Perl Modules in Debian repositories
 
 NOTE
-    EXPERIMENTAL => "use at your own risk"; # you have bin warned
+    Needs following extra Debian packages `libdpkg-perl' and
+    `libapt-pkg-perl'.
 
 SYNOPSIS
     command line:
@@ -137,6 +138,9 @@ METHODS
 
   clean
     Remove all files from cache folder.
+
+SEE ALSO
+    http://pkg-perl.alioth.debian.org/cpan2deb/
 
 AUTHOR
     jozef@kutej.net, `<jkutej at cpan.org>'
