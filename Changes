@@ -1,5 +1,8 @@
 Revision history for Debian-Apt-PM
 
+0.08    21 Sep 2011
+    * s/Debian::Dpkg::Version/Dpkg::Version/
+
 0.07    16 Sep 2011
     * distribution fixes
 

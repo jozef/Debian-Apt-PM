@@ -3,7 +3,7 @@ package Debian::Apt::PM;
 use warnings;
 use strict;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use 5.010;
 
@@ -11,7 +11,7 @@ use Moose;
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
 use IO::Any;
 use Parse::Deb::Control 0.03;
-use Debian::Dpkg::Version 'version_compare';
+use Dpkg::Version 'version_compare';
 use AptPkg::Config '$_config';
 use LWP::Simple 'mirror', 'RC_OK';
 use Carp 'croak';
