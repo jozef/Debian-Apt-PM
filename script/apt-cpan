@@ -21,11 +21,13 @@ sub main {
 	my $packages_file = $apm->_packages_dependencies_filename;
 	my $simulate;
 	my $force_all;
+	my $use_sudo;
 	GetOptions(
 		'help|h'            => \$help,
 		'packages-file|p=s' => \$packages_file,
 		'dummy|n'           => \$simulate,
 		'force-all|a'       => \$force_all,
+		'sudo|s'            => \$use_sudo,
 	) or pod2usage;
 	pod2usage if $help;
 	pod2usage
@@ -69,9 +71,9 @@ sub main {
 	@modules_to_install = reverse uniq @modules_to_install;
 	
 	my @cmds;
-	push @cmds, [ 'sudo', 'apt-get', 'install', join(" ", @debs_to_install) ]
+	push @cmds, [ ($use_sudo ? 'sudo' : ()), 'apt-get', 'install', join(" ", @debs_to_install) ]
 		if @debs_to_install;
-	push @cmds, [ 'sudo', 'cpan', '-i', join(" ", @modules_to_install) ]
+	push @cmds, [ ($use_sudo ? 'sudo' : ()), 'cpan', '-i', join(" ", @modules_to_install) ]
 		if @modules_to_install;
 	
 	foreach my $cmd (@cmds) {
