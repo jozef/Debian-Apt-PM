@@ -20,10 +20,12 @@ sub main {
 	my $help;
 	my $packages_file = $apm->_packages_dependencies_filename;
 	my $simulate;
+	my $force_all;
 	GetOptions(
 		'help|h'            => \$help,
 		'packages-file|p=s' => \$packages_file,
 		'dummy|n'           => \$simulate,
+		'force-all|a'       => \$force_all,
 	) or pod2usage;
 	pod2usage if $help;
 	pod2usage
@@ -55,13 +57,16 @@ sub main {
 			
 			my @module_depends =
 				grep { ref $_ ? 1 : ((push @debs_to_install, $_) and 0) }
-				find_depends($packages_file, $module_name)
+				find_depends($packages_file, $module_name, $force_all)
 			;
 			
 			push @new_depends, @module_depends;
 		}
 		@depends = @new_depends;
 	}
+	
+	@debs_to_install    = reverse uniq @debs_to_install;
+	@modules_to_install = reverse uniq @modules_to_install;
 	
 	my @cmds;
 	push @cmds, [ 'sudo', 'apt-get', 'install', join(" ", @debs_to_install) ]
@@ -81,6 +86,7 @@ sub main {
 sub find_depends {
 	my $packages_file = shift;
 	my $module        = shift;
+	my $force_all     = shift;
 	
 	my $packages_file_fh = IO::Uncompress::Gunzip->new($packages_file) or die 'failed to open '.$packages_file;
 	while (my $line = <$packages_file_fh>) {
@@ -94,14 +100,13 @@ sub find_depends {
 				if $depends eq 'undef';
 			return
 				uniq
-				sort
 				map { my $deb = $apm->find($_->[0], $_->[1]); ($deb->{'min'} ? $deb->{'min'}->{'package'} : $_); }
 				grep {
 					my $module = bless {"ID" => $_->[0]}, 'CPAN::Module';
 					my $inst_module_version = $module->inst_version;
 					(
 						defined $inst_module_version && (CPAN::Version->vcmp($inst_module_version, $_->[1]) >= 0)
-						? 0
+						? 0 || $force_all
 						: 1
 					)
 				}
@@ -128,6 +133,7 @@ apt-cpan - installs CPAN modules from Debian repository if possible
 	
 		--dummy|n         dummy run, just display what is going to be done
 		--packages-file|p path to 02packages.dependencies.txt.gz
+		--force-all|a     print out all Debian packages and Perl modules needed
 
 =head1 DESCRIPTION
 

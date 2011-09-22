@@ -1,5 +1,8 @@
 Revision history for Debian-Apt-PM
 
+0.09
+    * add --force-all option for apt-cpan
+
 0.08    21 Sep 2011
     * s/Debian::Dpkg::Version/Dpkg::Version/
     * Pod updates (thanks to Salve J. Nilsen)
