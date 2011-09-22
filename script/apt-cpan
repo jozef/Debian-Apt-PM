@@ -43,6 +43,7 @@ sub main {
 	);
 	my @debs_to_install;
 	my @modules_to_install;
+	my %visited_modules;
 	while (@depends) {
 		my @new_depends;
 		foreach my $module (@depends) {
@@ -59,7 +60,7 @@ sub main {
 			
 			my @module_depends =
 				grep { ref $_ ? 1 : ((push @debs_to_install, $_) and 0) }
-				find_depends($packages_file, $module_name, $force_all)
+				find_depends($packages_file, $module_name, \%visited_modules, $force_all)
 			;
 			
 			push @new_depends, @module_depends;
@@ -88,6 +89,7 @@ sub main {
 sub find_depends {
 	my $packages_file = shift;
 	my $module        = shift;
+	my $visited       = shift;
 	my $force_all     = shift;
 	
 	my $packages_file_fh = IO::Uncompress::Gunzip->new($packages_file) or die 'failed to open '.$packages_file;
@@ -115,6 +117,8 @@ sub find_depends {
 				map { $_->[1] ||= 0; $_; }
 				grep { $_->[0] ne 'perl' }
 				map { [ split('/', $_) ] }
+				map { $visited->{$_} = (); $_; }
+				grep { not exists $visited->{$_} }
 				split(/\s+/, $depends)
 			;
 		}
