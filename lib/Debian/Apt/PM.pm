@@ -207,6 +207,9 @@ sub _create_modules_index {
 	
 	my %modules_index;
 	foreach my $src (@sources) {
+		die $src." no such file. (run `apt-pm update` ?)\n"
+			unless -f $src;
+		
 		my @content_list;
 		given ($src) {
 			when (m/\.bz2$/) {
