@@ -44,6 +44,9 @@ sub find {
 	my $self        = shift;
 	my $module      = shift;
 	my $min_version = shift;
+
+	die 'no modules in '.$self->repo_type." index. did you add/set apt sources.list?\n"
+		unless scalar keys %{$self->_modules_index()};
 	
 	my $versions_info = $self->_modules_index()->{$module};
 	return if not $versions_info;

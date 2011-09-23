@@ -40,6 +40,11 @@ sub main {
 		$aptpm->update();
 		$aptpm_src->update()
 			if not $sources;
+
+		$aptpm->_create_modules_index;
+		$aptpm_src->_create_modules_index;
+		die "no modules in index. did you add/set apt sources.list?\n"
+			unless ((scalar keys %{$aptpm->_modules_index()}) or (scalar keys %{$aptpm_src->_modules_index()}) );
 	}
 	
 	if ($cmd eq 'clean') {
