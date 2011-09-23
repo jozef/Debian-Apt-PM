@@ -87,6 +87,8 @@ build will fail.
 use strict;
 use warnings;
 
+our $VERSION = '0.08';
+
 use 5.010;
 
 use Getopt::Long;
@@ -118,6 +120,7 @@ sub main {
 	my $no_cpan_patches   = 0;
 	my $tilde             = '';
 	my $debian_pkg_version;
+	my $print_version;
 	GetOptions(
 		'help|h'  => \$help,
 		'cpan=s'  => \$module_name,
@@ -128,8 +131,10 @@ sub main {
 		'no-cpan-patches' => \$no_cpan_patches,
 		'tilde=s' => \$tilde,
 		'debian-version=s' => \$debian_pkg_version,
+		'version|V'         => \$print_version,
 	) or pod2usage;
 	pod2usage if $help;
+	print_version() if $print_version;
 	pod2usage if not $module_name;
 	
 	if ($tilde and defined $debian_pkg_version) {
@@ -374,6 +379,11 @@ sub build_history {
 	close $fh;
 	
 	return $build_history{$tarball} || {};
+}
+
+sub print_version {
+	print "$0 $VERSION, Debian::Apt::PM $Debian::Apt::PM::VERSION, CPAN::Patches::Plugin::Debian $CPAN::Patches::Plugin::Debian::VERSION\n";
+	exit 0;
 }
 
 __END__

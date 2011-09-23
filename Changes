@@ -4,6 +4,7 @@ Revision history for Debian-Apt-PM
     * add --force-all option for apt-cpan
     * sudo no more default
     * throw an exception when the index is empty or missing
+    * add --version to all scripts
 
 0.08    21 Sep 2011
     * s/Debian::Dpkg::Version/Dpkg::Version/

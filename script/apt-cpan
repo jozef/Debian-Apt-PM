@@ -3,6 +3,8 @@
 use strict;
 use warnings;
 
+our $VERSION = '0.08';
+
 use Getopt::Long;
 use Pod::Usage;
 use Debian::Apt::PM;
@@ -22,14 +24,17 @@ sub main {
 	my $simulate;
 	my $force_all;
 	my $use_sudo;
+	my $print_version;
 	GetOptions(
 		'help|h'            => \$help,
 		'packages-file|p=s' => \$packages_file,
 		'dummy|n'           => \$simulate,
 		'force-all|a'       => \$force_all,
 		'sudo|s'            => \$use_sudo,
+		'version|V'         => \$print_version,
 	) or pod2usage;
 	pod2usage if $help;
+	print_version() if $print_version;
 	pod2usage
 		unless shift @ARGV eq 'install';
 	
@@ -125,6 +130,11 @@ sub find_depends {
 	}
 	
 	return;
+}
+
+sub print_version {
+	print "$0 $VERSION, Debian::Apt::PM $Debian::Apt::PM::VERSION\n";
+	exit 0;
 }
 
 __END__

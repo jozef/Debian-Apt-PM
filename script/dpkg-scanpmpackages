@@ -27,6 +27,8 @@ folder.
 use strict;
 use warnings;
 
+our $VERSION = '0.08';
+
 use Getopt::Long;
 use Pod::Usage;
 use File::Find::Rule;
@@ -49,13 +51,16 @@ sub main {
 	my $blacklisted_pkgs_arg = 'r-cran-gdata';
 	my $pool_url;
 	my $cleanup_deb;
+	my $print_version;
 	GetOptions(
 		'help|h'      => \$help,
 		'blacklist=s' => \$blacklisted_pkgs_arg,
 		'pool-url=s'  => \$pool_url,
 		'cleanup-deb' => \$cleanup_deb,
+		'version|V'         => \$print_version,
 	) or pod2usage;
 	pod2usage if $help;
+	print_version() if $print_version;
 	
 	my $mirror_location = shift @ARGV || '.';
 	pod2usage if not $mirror_location or not -d $mirror_location;
@@ -306,6 +311,11 @@ sub _trim {
 	$text =~ s/\s+$//xms;
 	
 	return $text;
+}
+
+sub print_version {
+	print "$0 $VERSION\n";
+	exit 0;
 }
 
 __END__

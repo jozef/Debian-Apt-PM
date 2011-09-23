@@ -3,6 +3,8 @@
 use strict;
 use warnings;
 
+our $VERSION = '0.08';
+
 use Getopt::Long;
 use Pod::Usage;
 use Debian::Apt::PM 0.03;
@@ -14,12 +16,15 @@ sub main {
 	my $help;
 	my $sources;
 	my $search_src = 0;
+	my $print_version;
 	GetOptions(
 		'help|h'      => \$help,
 		'sources|s=s' => \$sources,
 		'deb-src'     => \$search_src,
+		'version|V'         => \$print_version,
 	) or pod2usage;
 	pod2usage if $help;
+	print_version() if $print_version;
 	
 	# the switch makes no sence when sources explicitely set
 	$search_src = 0
@@ -91,6 +96,11 @@ sub main {
 	}
 	
 	return 0;
+}
+
+sub print_version {
+	print "$0 $VERSION, Debian::Apt::PM $Debian::Apt::PM::VERSION\n";
+	exit 0;
 }
 
 __END__

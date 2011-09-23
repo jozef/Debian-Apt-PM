@@ -3,6 +3,8 @@
 use strict;
 use warnings;
 
+our $VERSION = '0.08';
+
 use Getopt::Long;
 use Pod::Usage;
 use CPAN::PackageDetails;
@@ -19,13 +21,16 @@ sub main {
 	my $packages_file;
 	my $output_folder;
 	my $dependencies;
+	my $print_version;
 	GetOptions(
 		'help|h'       => \$help,
 		'packages-file|p=s' => \$packages_file,
 		'output-folder|o=s' => \$output_folder,
 		'dependencies|d'    => \$dependencies,
+		'version|V'         => \$print_version,
 	) or pod2usage;
 	pod2usage if $help;
+	print_version() if $print_version;
 	pod2usage if not $packages_file;
 	pod2usage if not $output_folder;
 	
@@ -130,6 +135,11 @@ sub dist_name {
 	$dist_name =~ s{[.] (tar [.] (gz|bz2) | zip | tgz)$}{}xms;
 	$dist_name =~ s{/.+/}{/}xms;
 	return $dist_name;
+}
+
+sub print_version {
+	print "$0 $VERSION, Debian::Apt::PM $Debian::Apt::PM::VERSION\n";
+	exit 0;
 }
 
 __END__
