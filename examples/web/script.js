@@ -1,11 +1,24 @@
 var cpan2deb = new Object;
 
 $(document).ready(function() {
+	cpan2deb.showInfo();
 	$('form').submit(cpan2deb.submitForm);
 	$(window).bind('hashchange', cpan2deb.parseParams);
 	cpan2deb.parseParams();
 	$('input[type="search"]').focus();
 });
+
+cpan2deb.showInfo = function () {
+	var infoUrl   = 'CPAN/info.json';
+	var infoBlock = $('#generatedInfo');
+	$.ajax({
+		type: "GET",
+		url: infoUrl,
+		dataType: 'json',
+		success: function (data) { infoBlock.text('on '+data.datetime) },
+		error: function () { infoBlock.text('no info date-time') },
+	});
+}
 
 cpan2deb.parseParams = function () {
 	var q = $.getURLParam("q");

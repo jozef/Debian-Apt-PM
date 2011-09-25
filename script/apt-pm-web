@@ -13,6 +13,7 @@ use Digest::MD5 'md5_hex';
 use JSON::Util;
 use MetaCPAN::API;
 use List::MoreUtils 'uniq';
+use DateTime;
 
 exit main();
 
@@ -115,6 +116,11 @@ sub main {
 	while (my ($letter_index, $modules_info) = each %json_buckets ) {
 		JSON::Util->new(pretty => 0)->encode($modules_info, [ $cpan_folder, $letter_index.'.json' ]);
 	}
+
+	JSON::Util->new()->encode({
+		'time'     => time(),
+		'datetime' => DateTime->now->iso8601(),
+	}, [ $cpan_folder, 'info.json' ]);
 
 	if ($dependencies) {
 		$package_details->write_file(File::Spec->catdir($cpan_folder, '02packages.dependencies.txt.gz'));

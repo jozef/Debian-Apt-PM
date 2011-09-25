@@ -5,6 +5,7 @@ Revision history for Debian-Apt-PM
     * sudo no more default
     * throw an exception when the index is empty or missing
     * add --version to all scripts
+    * apt-pm-web include data generation date-time
 
 0.08    21 Sep 2011
     * s/Debian::Dpkg::Version/Dpkg::Version/
