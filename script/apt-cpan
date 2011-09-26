@@ -77,9 +77,9 @@ sub main {
 	@modules_to_install = reverse uniq @modules_to_install;
 	
 	my @cmds;
-	push @cmds, [ ($use_sudo ? 'sudo' : ()), 'apt-get', 'install', join(" ", @debs_to_install) ]
+	push @cmds, [ ($use_sudo ? 'sudo' : ()), 'apt-get', 'install',  @debs_to_install ]
 		if @debs_to_install;
-	push @cmds, [ ($use_sudo ? 'sudo' : ()), 'cpan', '-i', join(" ", @modules_to_install) ]
+	push @cmds, [ ($use_sudo ? 'sudo' : ()), 'cpan', '-i', @modules_to_install ]
 		if @modules_to_install;
 	
 	foreach my $cmd (@cmds) {
