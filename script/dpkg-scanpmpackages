@@ -12,7 +12,7 @@ use File::Basename 'basename', 'dirname';
 use Module::Build::ModuleInfo;
 use File::Temp qw/ tempdir /;
 use File::Path 'remove_tree';
-use IO::Any 0.04;
+use IO::Any 0.05;
 use Parse::Deb::Control 0.03;
 use List::MoreUtils 'any', 'firstval';
 use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
@@ -66,13 +66,10 @@ sub main {
 		
 		# read the Packages.bz2 content
 		my $packages_dir = dirname($packages_file);
-		my $packages_bz_content   = IO::Any->slurp($packages_file);
-		my $packages_file_content;
-		bunzip2 \$packages_bz_content => \$packages_file_content or die "bunzip2 failed: $Bunzip2Error\n";
 
 		# extract list of all .deb filenames
 		my %deb_to_src;
-		my $packages = Parse::Deb::Control->new($packages_file_content);
+		my $packages = Parse::Deb::Control->new(IO::Uncompress::Bunzip2->new($packages_file));
 		my @deb_files =
 			grep {
 				die $_.' from '.$packages_file.' does not exists'
@@ -95,10 +92,7 @@ sub main {
 		# read the already processed packages
 		my $perl_packages_bz = File::Spec->catfile($packages_dir, 'PerlPackages.bz2');
 		if (-f $perl_packages_bz) {
-			my $perl_packages_bz_content = IO::Any->slurp($perl_packages_bz);
-			my $perl_packages_file_content;
-			bunzip2 \$perl_packages_bz_content => \$perl_packages_file_content or die "bunzip2 failed: $Bunzip2Error\n";
-			my $idx = Parse::Deb::Control->new($perl_packages_file_content);
+			my $idx = Parse::Deb::Control->new(IO::Uncompress::Bunzip2->new($perl_packages_bz));
 			foreach my $entry ($idx->get_keys('Filename')) {
 				my $filename = ${$entry->{'value'}};
 				$filename =~ s/\s*$//;
