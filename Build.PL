@@ -23,7 +23,7 @@ my $builder = Module::Build::SysPath->new(
     requires => {
         'Moose'                   => 0,
         'IO::Uncompress::Bunzip2' => 0,
-        'IO::Any'                 => 0.05,   # IO::Uncompress::Bunzip2 support
+        'IO::Any'                 => 0,
         'Parse::Deb::Control'     => 0.04,   # get_paras()
         'Dpkg::Version'           => 0,
         'AptPkg::Config'          => 0,
@@ -54,6 +54,8 @@ my $builder = Module::Build::SysPath->new(
         'CPAN'                    => 0,
         'CPAN::Module'            => 0,
         'DateTime'                => 0,
+        'Data::Header::Fields'    => '0.04',       # fix mem leaks
+        'Parallel::Iterator'      => 0,
     },
     script_files => [
         'script/apt-pm',

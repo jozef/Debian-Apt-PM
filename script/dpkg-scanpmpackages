@@ -5,35 +5,42 @@ use warnings;
 
 our $VERSION = '0.08';
 
+use 5.010;
+
 use Getopt::Long;
 use Pod::Usage;
 use File::Find::Rule;
 use File::Basename 'basename', 'dirname';
 use Module::Build::ModuleInfo;
 use File::Temp qw/ tempdir /;
-use File::Path 'remove_tree';
+use File::Path 'remove_tree', 'make_path';
 use IO::Any 0.05;
 use Parse::Deb::Control 0.03;
 use List::MoreUtils 'any', 'firstval';
-use IO::Uncompress::Bunzip2 qw(bunzip2 $Bunzip2Error) ;
+use IO::Compress::Bzip2 qw();
+use IO::Uncompress::Bunzip2 qw();
 use Carp 'croak';
 use LWP::UserAgent;
+use Data::Header::Fields '0.04';
+use Parallel::Iterator qw( iterate_as_array );
 
 exit main();
 
 sub main {
 	my $help;
 	my $use_old_index;
-	my $blacklisted_pkgs_arg = 'r-cran-gdata';
+	my $blacklisted_pkgs_arg = 'r-cran-gdata,linux-image';
 	my $pool_url;
 	my $cleanup_deb;
 	my $print_version;
+	my $parse_perlpackages;
 	GetOptions(
-		'help|h'      => \$help,
-		'blacklist=s' => \$blacklisted_pkgs_arg,
-		'pool-url=s'  => \$pool_url,
-		'cleanup-deb' => \$cleanup_deb,
-		'version|V'         => \$print_version,
+		'help|h'             => \$help,
+		'blacklist=s'        => \$blacklisted_pkgs_arg,
+		'pool-url=s'         => \$pool_url,
+		'cleanup-deb'        => \$cleanup_deb,
+		'version|V'          => \$print_version,
+		'parse-perlpackages' => \$parse_perlpackages,
 	) or pod2usage;
 	pod2usage if $help;
 	print_version() if $print_version;
@@ -41,6 +48,115 @@ sub main {
 	my $mirror_location = shift @ARGV || '.';
 	pod2usage if not $mirror_location or not -d $mirror_location;
 	#$mirror_location = File::Spec->rel2abs( $mirror_location );
+
+	my @blacklisted_pkgs = split(/\s*,\s*/, $blacklisted_pkgs_arg);
+	
+	parse_perlpackages($mirror_location, $pool_url, \@blacklisted_pkgs)
+		if $parse_perlpackages;
+
+	parse_packages($mirror_location, $pool_url, \@blacklisted_pkgs, $cleanup_deb);
+
+	cleanup_perl_dsc($mirror_location);
+
+	return 0;
+}
+
+sub cleanup_perl_dsc {
+	my $mirror_location = shift;
+
+	my @perlpackages_files = 
+		File::Find::Rule
+		->file()
+		->name( 'PerlPackages.bz2' )
+		->in( $mirror_location )
+	;
+	my %perldsc_files = 
+		map { $_ => undef }
+		File::Find::Rule
+		->file()
+		->name( '*.perl.dsc' )
+		->in( $mirror_location )
+	;
+	
+	foreach my $perlpackages_file (@perlpackages_files) {
+		my $packages_fh = IO::Uncompress::Bunzip2->new($perlpackages_file);
+		while (not $packages_fh->eof) {
+			my $para = '';
+			while (not $packages_fh->eof) {
+				my $line = <$packages_fh>;
+				last if $line =~ m/^\s*$/;
+				
+				$para .= $line;
+			}
+			my $dhf = Data::Header::Fields->new;
+			$dhf->decode(\$para);
+			
+			my $filename = _trim($dhf->get_value('Filename'));
+			die 'bad "Filename:" - '.$filename
+				if $filename !~ m/^ (.+) \.deb $/xms;
+			my $perl_dsc = $1.'.perl.dsc';
+			delete $perldsc_files{$perl_dsc};
+		}
+	}
+	
+	foreach my $unused_perldsc_filename (keys %perldsc_files) {
+		unlink($unused_perldsc_filename);
+	}
+}
+
+sub parse_perlpackages {
+	my $mirror_location  = shift;
+	my $pool_url         = shift;
+	my $blacklisted_pkgs = shift;
+	
+	
+	my @perlpackages_files = 
+		File::Find::Rule
+		->file()
+		->name( 'PerlPackages.bz2' )
+		->in( $mirror_location )
+	;
+	
+	foreach my $perlpackages_file (@perlpackages_files) {
+		my $packages_fh = IO::Uncompress::Bunzip2->new($perlpackages_file);
+		while (not $packages_fh->eof) {
+			my $para = '';
+			while (not $packages_fh->eof) {
+				my $line = <$packages_fh>;
+				last if $line =~ m/^\s*$/;
+				
+				$para .= $line;
+			}
+			my $dhf = Data::Header::Fields->new;
+			$dhf->decode(\$para);
+			
+			my $filename = _trim($dhf->get_value('Filename'));
+			my $source   = _trim($dhf->get_value('Source'));
+			my $package  = _trim($dhf->get_value('Package'));
+			
+			next if $package ~~ $blacklisted_pkgs;
+
+			die $filename.' from '.$perlpackages_file.' does not exists'
+				if ((! -f File::Spec->catfile($mirror_location, $filename)) and !$pool_url);
+			
+			die 'bad "Filename:" - '.$filename
+				if $filename !~ m/^ (.+) \.deb $/xms;
+			my $perl_dsc = $1.'.perl.dsc';
+			my $perl_dsc_dir = dirname($perl_dsc);
+			make_path($perl_dsc_dir) or die 'failed to make_path '.$perl_dsc_dir.' - '.$!
+				unless -d $perl_dsc_dir;
+			IO::Any->spew($perl_dsc, $para);
+		}
+		$packages_fh->close;
+	}
+}
+
+sub parse_packages {
+	my $mirror_location  = shift;
+	my $pool_url         = shift;
+	my $blacklisted_pkgs = shift;
+	my $cleanup_deb      = shift;
+	
 	
 	my @packages_files = 
 		File::Find::Rule
@@ -49,11 +165,13 @@ sub main {
 		->in( $mirror_location )
 	;
 	
-	my @blacklisted_pkgs = split(/\s*,\s*/, $blacklisted_pkgs_arg);
-
-	# loop through all Packages.bz2 that were found
 	foreach my $packages_file (@packages_files) {
-		print STDERR 'processing ', $packages_file, "\n";
+		my $packages_fh     = IO::Uncompress::Bunzip2->new($packages_file);
+		
+		my $perlpackages_filename = $packages_file;
+		$perlpackages_filename =~ s/(Packages.bz2)/Perl$1/;
+		my $perlpackages_fh = IO::Compress::Bzip2->new($perlpackages_filename.'.tmp')
+			or die $perlpackages_filename.' - '.$!;
 
 		my $distribution = 'unstable';
 		my $component    = 'local';
@@ -64,195 +182,178 @@ sub main {
 			$component    = _trim($release->{'Component'}) || $component;
 		}
 		
-		# read the Packages.bz2 content
-		my $packages_dir = dirname($packages_file);
-
-		# extract list of all .deb filenames
-		my %deb_to_src;
-		my $packages = Parse::Deb::Control->new(IO::Uncompress::Bunzip2->new($packages_file));
-		my @deb_files =
-			grep {
-				die $_.' from '.$packages_file.' does not exists'
-					if ((! -f File::Spec->catfile($mirror_location, $_)) and !$pool_url);
-				1;
+		while (not $packages_fh->eof) {
+			my $para = '';
+			while (not $packages_fh->eof) {
+				my $line = <$packages_fh>;
+				last if $line =~ m/^\s*$/;
+				
+				$para .= $line;
 			}
-			map { _trim($_->{'para'}->{'Filename'}) }
-			map {
-				$deb_to_src{_trim($_->{'para'}->{'Filename'})} = _trim($_->{'para'}->{'Source'})
-					if $_->{'para'}->{'Source'};
-				$_;
-			}
-			grep { not _trim($_->{'para'}->{'Package'}) ~~ \@blacklisted_pkgs }
-			$packages->get_keys('Filename')
-		;
-				
-		my %provides;
-		my %deb_filenames;
+			my $dhf = Data::Header::Fields->new->decode(\$para);
+			
+			my $filename = _trim($dhf->get_value('Filename'));
+			my $source   = _trim($dhf->get_value('Source'));
+			my $package  = _trim($dhf->get_value('Package'));
+			
+			next if $package ~~ $blacklisted_pkgs;
 
-		# read the already processed packages
-		my $perl_packages_bz = File::Spec->catfile($packages_dir, 'PerlPackages.bz2');
-		if (-f $perl_packages_bz) {
-			my $idx = Parse::Deb::Control->new(IO::Uncompress::Bunzip2->new($perl_packages_bz));
-			foreach my $entry ($idx->get_keys('Filename')) {
-				my $filename = ${$entry->{'value'}};
-				$filename =~ s/\s*$//;
-				$filename =~ s/^\s//;
-				my $para  = '';
-				$entry->{'para'}->{'Distribution'} ||= ' '.$distribution."\n";
-				$entry->{'para'}->{'Component'}    ||= ' '.$component."\n";
-				foreach my $key (qw(Package Architecture Filename Version Source Distribution Component Perl-Modules)) {
-					$para .= $key.':'.$entry->{'para'}->{$key}
-						if $entry->{'para'}->{$key};
-				}
-				
-				$deb_filenames{basename($filename, '.deb')} =  $para
-					if any { $_ eq $filename } @deb_files;
-			}
-		}		
+			die $filename.' from '.$packages_file.' does not exists'
+				if ((! -f File::Spec->catfile($mirror_location, $filename)) and !$pool_url);
+			
+			die 'bad "Filename:" - '.$filename
+				if $filename !~ m/^ (.+) \.deb $/xms;
+			my $perl_dsc = $1.'.perl.dsc';
+			my $perl_dsc_dir = dirname($perl_dsc);
+			make_path($perl_dsc_dir) or die 'failed to make_path '.$perl_dsc_dir.' - '.$!
+				unless -d $perl_dsc_dir;
+			
+			unless (-f $perl_dsc) {
+				print 'parsing Perl packages from ', $filename, "\n";
 
-		# process deb files
-		foreach my $deb_file (@deb_files) {
-			my $deb_name = basename($deb_file, '.deb');
+				die 'wrong package name - '.$filename
+					if $filename !~ m/^([^_]+) _ ([^_]+) _ ([^_]+) \.deb $/xms;
+				my ($package_name, $version, $arch) = ($1, $2, $3);
 
-			$provides{$deb_name} = undef;
-			
-			# skip already processed
-			next if exists $deb_filenames{$deb_name};
-
-			$deb_filenames{$deb_name} = $deb_file;
-			$provides{$deb_name}      = {};
-			my $tmp_dir = tempdir();
-			
-			my $deb_full_filename = File::Spec->catfile($mirror_location, $deb_file);
-			
-			# fetch the deb file if not in the mirror
-			if (not -f $deb_full_filename) {
-				die 'no mirror url set and '.$deb_full_filename.' not found'
-					if not $pool_url;
-				
-				my $deb_full_path = dirname($deb_full_filename);
-				system('mkdir', '-p', $deb_full_path)
-					if not -d $deb_full_path;
-				
-				fetch($pool_url.$deb_file, $deb_full_filename);
-			}
-			
-			# extract .deb
-			system(
-				'dpkg',
-				'-x',
-				$deb_full_filename,
-				$tmp_dir,
-			);
-			
-			# get list of .pm files
-			my @pm_files = File::Find::Rule
-				->file()
-				->name( '*.pm' )
-				->in( $tmp_dir )
-			;
-			
-			# FIXME remove .pm files that are not in standard Perl @INC folders
-			#       this could be done probably based on a --perl-folders-only switch
-			
-			# find all package names from pm_files
-			foreach my $pm_file (@pm_files) {
-				# add version 0 based on filename, will be set properly later if found
-				if (my $inc_prefix = firstval { index($pm_file, $tmp_dir.$_) == 0 } @INC) {
-					$inc_prefix = $tmp_dir.$inc_prefix;
-					my $package = substr($pm_file, length($inc_prefix)+1, -3);
-					$package =~ s{/}{::}xmsg;
-					$provides{$deb_name}->{$package} = 0;
-				}
-
-				# get module info
-				my $info = eval { Module::Build::ModuleInfo->new_from_file($pm_file) };
-				warn 'failed to get module info of "'.$pm_file.'" - "'.$@.'"' if $@;
-				next if not $info;
-				
-				#print 'processing ', $pm_file, "\n";
-				
-				$pm_file =~ s{^$tmp_dir.(.+)$}{$1};
-				
-				foreach my $package (keys %{$info->{'versions'}}) {
-					next if $package eq 'main';
-					
-					# skip inside packages
-					my $package_file = $package.'.pm';
-					$package_file =~ s{::}{/}xmsg;
-					next if substr($pm_file,0-length($package_file)) ne $package_file;
-					
-					# set version to undef 
-					my $version = (
-						$info->{'versions'}->{$package}
-						? $info->{'versions'}->{$package}->stringify
-						: 0
-					);
-					
-					$provides{$deb_name}->{$package} = $version;
-				}
-			}
-			
-			remove_tree($tmp_dir);
-			unlink($deb_full_filename)
-				if $cleanup_deb;	
-		}
-
-		# write PerlPackages.tmp
-		my $perl_packages_fh = IO::Any->write([$packages_dir, 'PerlPackages.tmp']);
-		foreach my $deb_name (sort keys %provides) {
-			die 'wrong package name - '.$deb_name
-				if $deb_name !~ m/^([^_]+) _ ([^_]+) _ ([^_]+) $/xms;
-			my ($package, $version, $arch) = ($1, $2, $3);
-			
-			if ($provides{$deb_name}) {
-				print $perl_packages_fh 'Package: ', $package, "\n";
+				my $perl_dsc_fh = IO::Any->write([$perl_dsc]);
+				print $perl_dsc_fh 'Package: ', $package, "\n";
 				
 				print
-					$perl_packages_fh
+					$perl_dsc_fh
 					'Architecture: ', $arch, "\n",
-					'Filename: ', $deb_filenames{$deb_name}, "\n",
+					'Filename: ', $filename, "\n",
 					'Version: ', $version, "\n",
 					'Distribution: ', $distribution, "\n",
 					'Component: ', $component, "\n",
 					(
-						$deb_to_src{$deb_filenames{$deb_name}}
-						? ('Source: ', $deb_to_src{$deb_filenames{$deb_name}}, "\n")
+						$source
+						? ('Source: ', $source, "\n")
 						: ()
 					),
 				;
 				
-				my $perl_modules_count = scalar keys %{$provides{$deb_name}};
+				my ($provides) = iterate_as_array(
+					{ workers => 1 },
+					sub {
+						my ($array_id, $data) = @_;
+						my %provides = parse_perlpackages_from_deb($mirror_location, $filename, $pool_url, $cleanup_deb);
+						return $array_id, \%provides;
+					},
+					[1]
+				);
+				
+				my $perl_modules_count = scalar keys %{$provides};
 				if ($perl_modules_count) {
-					print $perl_packages_fh
+					print $perl_dsc_fh
 						'Perl-Modules: ',
 						($perl_modules_count > 1 ? "\n " : ''),
 						(
 							join(
 								"\n ", map {
-									$_.' ('.$provides{$deb_name}->{$_}.')'
-								} keys %{$provides{$deb_name}}
+									$_.' ('.$provides->{$_}.')'
+								} keys %{$provides}
 							)
 						), "\n"
 					;
 				}
+				$perl_dsc_fh->close;
+
 			}
-			else {
-				print $perl_packages_fh $deb_filenames{$deb_name};
-			}
-			print $perl_packages_fh "\n";
+			
+			print $perlpackages_fh IO::Any->slurp($perl_dsc)."\n";
+		}
+		
+		rename($perlpackages_filename.'.tmp', $perlpackages_filename) or die $!;
+	}
+}
+
+sub parse_perlpackages_from_deb {
+	my $mirror_location   = shift;
+	my $deb_filename      = shift or die;
+	my $pool_url          = shift;
+	my $cleanup_deb       = shift;
+	
+	my $deb_name = basename($deb_filename, '.deb');
+
+	my %provides;
+	
+	my $tmp_dir = tempdir();
+	
+	my $deb_full_filename = File::Spec->catfile($mirror_location, $deb_filename);
+	
+	# fetch the deb file if not in the mirror
+	if (not -f $deb_full_filename) {
+		die 'no mirror url set and '.$deb_full_filename.' not found'
+			if not $pool_url;
+		
+		my $deb_full_path = dirname($deb_full_filename);
+		system('mkdir', '-p', $deb_full_path)
+			if not -d $deb_full_path;
+		
+		fetch($pool_url.$deb_filename, $deb_full_filename);
+	}
+	
+	# extract .deb
+	system(
+		'dpkg',
+		'-x',
+		$deb_full_filename,
+		$tmp_dir,
+	);
+	
+	# get list of .pm files
+	my @pm_files = File::Find::Rule
+		->file()
+		->name( '*.pm' )
+		->in( $tmp_dir )
+	;
+	
+	# FIXME remove .pm files that are not in standard Perl @INC folders
+	#       this could be done probably based on a --perl-folders-only switch
+	
+	# find all package names from pm_files
+	foreach my $pm_file (@pm_files) {
+		# add version 0 based on filename, will be set properly later if found
+		if (my $inc_prefix = firstval { index($pm_file, $tmp_dir.$_) == 0 } @INC) {
+			$inc_prefix = $tmp_dir.$inc_prefix;
+			my $package = substr($pm_file, length($inc_prefix)+1, -3);
+			$package =~ s{/}{::}xmsg;
+			$provides{$package} = 0;
 		}
 
-		# create the PerlPackages.bz2
-		my $perl_packages     = File::Spec->catfile($packages_dir, 'PerlPackages');
-		my $perl_packages_tmp = File::Spec->catfile($packages_dir, 'PerlPackages.tmp');
-		unlink $perl_packages_tmp.'.bz2'
-			if -f $perl_packages_tmp.'.bz2';
-		system('bzip2', '-9', $perl_packages_tmp) and die $!;
-		rename($perl_packages_tmp.'.bz2', $perl_packages.'.bz2') or die $!;
+		# get module info
+		my $info = eval { Module::Build::ModuleInfo->new_from_file($pm_file) };
+		warn 'failed to get module info of "'.$pm_file.'" - "'.$@.'"' if $@;
+		next if not $info;
+		
+		#print 'processing ', $pm_file, "\n";
+		
+		$pm_file =~ s{^$tmp_dir.(.+)$}{$1};
+		
+		foreach my $package (keys %{$info->{'versions'}}) {
+			next if $package eq 'main';
+			
+			# skip inside packages
+			my $package_file = $package.'.pm';
+			$package_file =~ s{::}{/}xmsg;
+			next if substr($pm_file,0-length($package_file)) ne $package_file;
+			
+			# set version to undef 
+			my $version = (
+				$info->{'versions'}->{$package}
+				? $info->{'versions'}->{$package}->stringify
+				: 0
+			);
+			
+			$provides{$package} = $version;
+		}
 	}
-
-	return 0;
+	
+	remove_tree($tmp_dir);
+	unlink($deb_full_filename)
+		if $cleanup_deb;
+	
+	return %provides;	
 }
 
 sub fetch {
@@ -276,6 +377,9 @@ sub fetch {
 sub _trim {
 	my $text = shift;
 	croak 'too much argauments' if @_;
+	
+	return
+		unless defined $text;
 	
 	$text =~ s/^\s+//xms;
 	$text =~ s/\s+$//xms;
