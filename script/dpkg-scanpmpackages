@@ -17,8 +17,9 @@ use File::Path 'remove_tree', 'make_path';
 use IO::Any 0.05;
 use Parse::Deb::Control 0.03;
 use List::MoreUtils 'any', 'firstval';
-use IO::Compress::Bzip2 qw();
-use IO::Uncompress::Bunzip2 qw();
+#use IO::Compress::Bzip2 qw();
+use IO::Uncompress::Bunzip2 qw($Bunzip2Error);
+
 use Carp 'croak';
 use LWP::UserAgent;
 use Data::Header::Fields '0.04';
@@ -72,7 +73,7 @@ sub cleanup_perl_dsc {
 	;
 	my %perldsc_files = 
 		map { $_ => undef }
-		map { File::Spec->catfile($mirror_location, $_) }
+		map { File::Spec->abs2rel($_) }
 		File::Find::Rule
 		->file()
 		->name( '*.perl.dsc' )
@@ -99,7 +100,7 @@ sub cleanup_perl_dsc {
 			my $filename = _trim($dhf->get_value('Filename'));
 			die 'bad "Filename:" - '.$filename.' in ('.$para.')'
 				if $filename !~ m/^ (.+) \.u?deb $/xms;
-			my $perl_dsc = File::Spec->catfile($mirror_location, $1.'.perl.dsc');
+			my $perl_dsc = File::Spec->abs2rel(File::Spec->catfile($mirror_location, $1.'.perl.dsc'));
 			delete $perldsc_files{$perl_dsc};
 		}
 	}
@@ -179,8 +180,10 @@ sub parse_packages {
 		my $packages_fh     = IO::Uncompress::Bunzip2->new($packages_file);
 		
 		my $perlpackages_filename = $packages_file;
-		$perlpackages_filename =~ s/(Packages.bz2)/Perl$1/;
-		my $perlpackages_fh = IO::Compress::Bzip2->new($perlpackages_filename.'.tmp')
+		$perlpackages_filename =~ s/(Packages).bz2/Perl$1/;
+		#my $perlpackages_fh = IO::Compress::Bzip2->new($perlpackages_filename.'.tmp')
+		#	or die $perlpackages_filename.' - '.$!;
+		my $perlpackages_fh = IO::Any->write($perlpackages_filename)
 			or die $perlpackages_filename.' - '.$!;
 
 		my $distribution = 'unstable';
@@ -276,7 +279,10 @@ sub parse_packages {
 			print $perlpackages_fh IO::Any->slurp($perl_dsc)."\n";
 		}
 		
-		rename($perlpackages_filename.'.tmp', $perlpackages_filename) or die $!;
+		$packages_fh->close;
+		$perlpackages_fh->close;
+		
+		system('bzip2', '-9', '-f', $perlpackages_filename) and die $!;
 	}
 }
 
