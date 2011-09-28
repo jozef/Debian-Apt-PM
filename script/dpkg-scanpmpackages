@@ -72,6 +72,7 @@ sub cleanup_perl_dsc {
 	;
 	my %perldsc_files = 
 		map { $_ => undef }
+		map { File::Spec->catfile($mirror_location, $_) }
 		File::Find::Rule
 		->file()
 		->name( '*.perl.dsc' )
@@ -79,6 +80,7 @@ sub cleanup_perl_dsc {
 	;
 	
 	foreach my $perlpackages_file (@perlpackages_files) {
+		print 'cleaning-up from ', $perlpackages_file, "\n";
 		my $packages_fh = IO::Uncompress::Bunzip2->new($perlpackages_file);
 		while (not $packages_fh->eof) {
 			my $para = '';
@@ -88,13 +90,16 @@ sub cleanup_perl_dsc {
 				
 				$para .= $line;
 			}
+			
+			next if $para =~ m/^\s*$/;
+			
 			my $dhf = Data::Header::Fields->new;
 			$dhf->decode(\$para);
 			
 			my $filename = _trim($dhf->get_value('Filename'));
-			die 'bad "Filename:" - '.$filename
-				if $filename !~ m/^ (.+) \.deb $/xms;
-			my $perl_dsc = $1.'.perl.dsc';
+			die 'bad "Filename:" - '.$filename.' in ('.$para.')'
+				if $filename !~ m/^ (.+) \.u?deb $/xms;
+			my $perl_dsc = File::Spec->catfile($mirror_location, $1.'.perl.dsc');
 			delete $perldsc_files{$perl_dsc};
 		}
 	}
@@ -118,6 +123,7 @@ sub parse_perlpackages {
 	;
 	
 	foreach my $perlpackages_file (@perlpackages_files) {
+		print 'processing ', $perlpackages_file, "\n";
 		my $packages_fh = IO::Uncompress::Bunzip2->new($perlpackages_file);
 		while (not $packages_fh->eof) {
 			my $para = '';
@@ -127,6 +133,9 @@ sub parse_perlpackages {
 				
 				$para .= $line;
 			}
+
+			next if $para =~ m/^\s*$/;
+
 			my $dhf = Data::Header::Fields->new;
 			$dhf->decode(\$para);
 			
@@ -136,12 +145,12 @@ sub parse_perlpackages {
 			
 			next if $package ~~ $blacklisted_pkgs;
 
-			die $filename.' from '.$perlpackages_file.' does not exists'
+			die $filename.' does not exists'
 				if ((! -f File::Spec->catfile($mirror_location, $filename)) and !$pool_url);
 			
-			die 'bad "Filename:" - '.$filename
-				if $filename !~ m/^ (.+) \.deb $/xms;
-			my $perl_dsc = $1.'.perl.dsc';
+			die 'bad "Filename:" - '.$filename.' ('.$package.')'
+				if $filename !~ m/^ (.+) \.u?deb $/xms;
+			my $perl_dsc = File::Spec->catfile($mirror_location, $1.'.perl.dsc');
 			my $perl_dsc_dir = dirname($perl_dsc);
 			make_path($perl_dsc_dir) or die 'failed to make_path '.$perl_dsc_dir.' - '.$!
 				unless -d $perl_dsc_dir;
@@ -166,6 +175,7 @@ sub parse_packages {
 	;
 	
 	foreach my $packages_file (@packages_files) {
+		print 'processing from ', $packages_file, "\n";
 		my $packages_fh     = IO::Uncompress::Bunzip2->new($packages_file);
 		
 		my $perlpackages_filename = $packages_file;
@@ -190,6 +200,9 @@ sub parse_packages {
 				
 				$para .= $line;
 			}
+
+			next if $para =~ m/^\s*$/;
+
 			my $dhf = Data::Header::Fields->new->decode(\$para);
 			
 			my $filename = _trim($dhf->get_value('Filename'));
@@ -201,9 +214,9 @@ sub parse_packages {
 			die $filename.' from '.$packages_file.' does not exists'
 				if ((! -f File::Spec->catfile($mirror_location, $filename)) and !$pool_url);
 			
-			die 'bad "Filename:" - '.$filename
-				if $filename !~ m/^ (.+) \.deb $/xms;
-			my $perl_dsc = $1.'.perl.dsc';
+			die 'bad "Filename:" - '.$filename.' ('.$package.')'
+				if $filename !~ m/^ (.+) \.u?deb $/xms;
+			my $perl_dsc = File::Spec->catfile($mirror_location, $1.'.perl.dsc');
 			my $perl_dsc_dir = dirname($perl_dsc);
 			make_path($perl_dsc_dir) or die 'failed to make_path '.$perl_dsc_dir.' - '.$!
 				unless -d $perl_dsc_dir;
@@ -212,7 +225,7 @@ sub parse_packages {
 				print 'parsing Perl packages from ', $filename, "\n";
 
 				die 'wrong package name - '.$filename
-					if $filename !~ m/^([^_]+) _ ([^_]+) _ ([^_]+) \.deb $/xms;
+					if $filename !~ m/^([^_]+) _ ([^_]+) _ ([^_]+) \.u?deb $/xms;
 				my ($package_name, $version, $arch) = ($1, $2, $3);
 
 				my $perl_dsc_fh = IO::Any->write([$perl_dsc]);
@@ -273,8 +286,6 @@ sub parse_perlpackages_from_deb {
 	my $pool_url          = shift;
 	my $cleanup_deb       = shift;
 	
-	my $deb_name = basename($deb_filename, '.deb');
-
 	my %provides;
 	
 	my $tmp_dir = tempdir();
