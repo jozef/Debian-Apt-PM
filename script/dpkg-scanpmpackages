@@ -19,6 +19,7 @@ use Parse::Deb::Control 0.03;
 use List::MoreUtils 'any', 'firstval';
 #use IO::Compress::Bzip2 qw();
 use IO::Uncompress::Bunzip2 qw($Bunzip2Error);
+use File::is;
 
 use Carp 'croak';
 use LWP::UserAgent;
@@ -176,11 +177,18 @@ sub parse_packages {
 	;
 	
 	foreach my $packages_file (@packages_files) {
-		print 'processing from ', $packages_file, "\n";
-		my $packages_fh     = IO::Uncompress::Bunzip2->new($packages_file);
 		
 		my $perlpackages_filename = $packages_file;
 		$perlpackages_filename =~ s/(Packages).bz2/Perl$1/;
+		
+		if ((-f $perlpackages_filename.'.bz2') and File::is->newer($perlpackages_filename.'.bz2', $packages_file)) {
+			print 'skipping ', $packages_file, ' no changes', "\n";
+			next;
+		}
+		
+		print 'processing from ', $packages_file, "\n";
+		my $packages_fh     = IO::Uncompress::Bunzip2->new($packages_file);
+		
 		#my $perlpackages_fh = IO::Compress::Bzip2->new($perlpackages_filename.'.tmp')
 		#	or die $perlpackages_filename.' - '.$!;
 		my $perlpackages_fh = IO::Any->write($perlpackages_filename)
