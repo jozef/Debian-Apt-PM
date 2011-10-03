@@ -123,6 +123,96 @@ sub clean {
 	unlink($self->packages_dependencies);
 }
 
+sub resolve_install_depends {
+	my $self      = shift;
+	my $force_all = shift;
+	my @modules = @_;
+
+	my @depends = (
+		map { $_->[1] ||= 0; $_; }
+		map { [ split('/', $_) ] }
+		@modules
+	);
+	my @debs_to_install;
+	my @modules_to_install;
+	my %visited_modules;
+	while (@depends) {
+		my @new_depends;
+		foreach my $module (@depends) {
+			my $module_name    = $module->[0];
+			my $module_version = $module->[1];
+			my $deb_version    = $self->find($module_name, $module_version);
+			if (exists $deb_version->{'min'}) {
+				push @debs_to_install, $deb_version->{'min'}->{'package'};
+				next;
+			}
+			else {
+				push @modules_to_install, $module_name;
+			}
+			
+			my @module_depends =
+				grep { ref $_ ? 1 : ((push @debs_to_install, $_) and 0) }
+				$self->module_depends($module_name, $force_all, \%visited_modules)
+			;
+			
+			push @new_depends, @module_depends;
+		}
+		@depends = @new_depends;
+	}
+	
+	@debs_to_install    = reverse uniq @debs_to_install;
+	@modules_to_install = reverse uniq @modules_to_install;
+	
+	return (\@debs_to_install, \@modules_to_install);
+}
+
+sub module_depends {
+	my $self      = shift;
+	my $module    = shift;
+	my $force_all = shift // 1;
+	my $visited   = shift || {};
+	
+	my $packages_file = $self->packages_dependencies;
+	
+	my $packages_file_fh = (
+		$packages_file =~ m/\.gz$/
+		? (IO::Uncompress::Gunzip->new($packages_file) or die 'failed to open '.$packages_file)
+		: (IO::Any->read($packages_file) or die 'failed to open '.$packages_file)
+	);
+	while (my $line = <$packages_file_fh>) {
+		last if $line =~ m/^\s*$/;
+	}
+	while (my $line = <$packages_file_fh>) {
+		chomp $line;
+		if ($line =~ m{^ $module \s+ [^\s]+ \s+ (.+) $}xms) {
+			my $depends = $1;
+			return
+				if $depends eq 'undef';
+			return
+				uniq
+				map { my $deb = $self->find($_->[0], $_->[1]); ($deb->{'min'} ? $deb->{'min'}->{'package'} : $_); }
+				grep {
+					my $module = bless {"ID" => $_->[0]}, 'CPAN::Module';
+					my $inst_module_version = $module->inst_version;
+					(
+						defined $inst_module_version && (CPAN::Version->vcmp($inst_module_version, $_->[1]) >= 0)
+						? 0 || $force_all
+						: 1
+					)
+				}
+				map { $_->[1] ||= 0; $_; }
+				grep { $_->[0] ne 'perl' }
+				map { [ split('/', $_) ] }
+				map { $visited->{$_} = (); $_; }
+				grep { not exists $visited->{$_} }
+				split(/\s+/, $depends)
+			;
+		}
+	}
+	
+	return;
+}
+
 sub _etc_apt_sources {
 	my $self = shift;
 	
@@ -441,6 +531,19 @@ to be used by C<apt-cpan>.
 =head2 clean
 
 Remove all files from cache folder.
+
+=head2 resolve_install_depends($force_all, @modules)
+
+Returns two array references one with Debian packages, the other with CPAN
+packages that needs to be installed on current system for the given list
+of C<@modules>.
+
+Option C<$force_all> (true/false) choose to include all dependencies not
+just the ones that needs to be installed.
+
+=head2 module_depends($module)
+
+Return all Perl modules and Debian packages C<$module> has as dependency.
 
 =head1 SEE ALSO
 
