@@ -36,9 +36,10 @@ has 'cachedir'        => (
 		.($_[0]->repo_type eq 'deb-src' ? '-src' : '' )
 	}
 );
-has 'repo_type'       => (is => 'rw', lazy => 1, default => 'deb');
+has 'repo_type'             => (is => 'rw', lazy => 1, default => 'deb');
+has 'packages_dependencies' => (is => 'rw', lazy => 1, default => sub { $_[0]->cachedir.'/../02packages.dependencies.txt' });
 has 'packages_dependencies_url'
-                      => (is => 'rw', lazy => 1, default => 'http://pkg-perl.alioth.debian.org/cpan2deb/CPAN/02packages.dependencies.txt.gz');
+                            => (is => 'rw', lazy => 1, default => 'http://pkg-perl.alioth.debian.org/cpan2deb/CPAN/02packages.dependencies.txt.gz');
 
 sub find {
 	my $self        = shift;
@@ -103,7 +104,14 @@ sub update {
 	JSON::Util->encode($aptpm->_create_modules_index, [$index_filename])
 		if (not -f $index_filename) or File::is->older($index_filename, glob($self->cachedir.'/*.json')) or @existing;
 	
-	mirror($self->packages_dependencies_url, $self->_packages_dependencies_filename);
+	my $package_dependencies = $self->packages_dependencies;
+	if ($package_dependencies =~ m/\.gz$/) {
+		mirror($self->packages_dependencies_url, $package_dependencies);
+	}
+	else {
+		mirror($self->packages_dependencies_url, $package_dependencies.'.gz');
+		system('gzip', '-d', '-f', $package_dependencies.'.gz');
+	}
 }
 
 sub clean {
@@ -112,11 +120,7 @@ sub clean {
 	foreach my $filename (glob($self->cachedir.'/*')) {
 		unlink($filename) or warn 'failed to remove '.$filename."\n";
 	}
-	unlink($self->_packages_dependencies_filename);
-}
-
-sub _packages_dependencies_filename {
-	return $_[0]->cachedir.'/../02packages.dependencies.txt.gz';
+	unlink($self->packages_dependencies);
 }
 
 sub _etc_apt_sources {
@@ -369,6 +373,10 @@ Default is F</var/cache/apt/apt-pm/deb/>.
 =item repo_type
 
 C<deb|deb-src>
+
+=item packages_dependencies
+
+Path to C<02packages.dependencies.txt(.gz)?> file.
 
 =back
 

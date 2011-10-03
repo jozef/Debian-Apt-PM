@@ -20,7 +20,7 @@ exit main();
 
 sub main {
 	my $help;
-	my $packages_file = $apm->_packages_dependencies_filename;
+	my $packages_file = $apm->packages_dependencies;
 	my $simulate;
 	my $force_all;
 	my $use_sudo;
@@ -97,7 +97,11 @@ sub find_depends {
 	my $visited       = shift;
 	my $force_all     = shift;
 	
-	my $packages_file_fh = IO::Uncompress::Gunzip->new($packages_file) or die 'failed to open '.$packages_file;
+	my $packages_file_fh = (
+		$packages_file =~ m/\.gz$/
+		? (IO::Uncompress::Gunzip->new($packages_file) or die 'failed to open '.$packages_file)
+		: (IO::Any->read($packages_file) or die 'failed to open '.$packages_file)
+	);
 	while (my $line = <$packages_file_fh>) {
 		last if $line =~ m/^\s*$/;
 	}

@@ -40,7 +40,6 @@ sub main {
 	$aptpm->sources([split(',', $sources)])
 		if ($sources);
 	
-	# get provides from dbedia.com
 	if ($cmd eq 'update') {
 		$aptpm->update();
 		$aptpm_src->update()
