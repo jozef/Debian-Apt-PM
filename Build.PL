@@ -66,7 +66,6 @@ my $builder = Module::Build::SysPath->new(
     ],
     add_to_cleanup => [ 'Debian-Apt-PM-*' ],
     create_readme  => 1,
-    sign           => 1,
     meta_merge => {
         resources => {
             repository => 'git://github.com/jozef/Debian-Apt-PM.git',
