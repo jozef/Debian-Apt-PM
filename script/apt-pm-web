@@ -173,6 +173,6 @@ apt-pm-web - generate json files for the CPAN package => Debian package mapping
 
 Script that will generate json files that are needed for the mapping page.
 
-See L<http://pkg-perl.alioth.debian.org/cpan2deb/>
+See L<http://deb.perl.it/>
 
 =cut

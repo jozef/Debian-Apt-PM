@@ -3,7 +3,7 @@ package Debian::Apt::PM;
 use warnings;
 use strict;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use 5.010;
 
@@ -39,7 +39,7 @@ has 'cachedir'        => (
 has 'repo_type'             => (is => 'rw', lazy => 1, default => 'deb');
 has 'packages_dependencies' => (is => 'rw', lazy => 1, default => sub { $_[0]->cachedir.'/../02packages.dependencies.txt' });
 has 'packages_dependencies_url'
-                            => (is => 'rw', lazy => 1, default => 'http://pkg-perl.alioth.debian.org/cpan2deb/CPAN/02packages.dependencies.txt.gz');
+                            => (is => 'rw', lazy => 1, default => 'http://deb.perl.it/debian/cpan-deb/CPAN/02packages.dependencies.txt.gz');
 
 sub find {
 	my $self        = shift;
@@ -530,7 +530,7 @@ Scans the F</etc/apt/sources.list> and F</etc/apt/sources.list.d/*.list>
 repositories for F<PerlPackages.bz2> and prepares them to be used for find.
 All F<PerlPackages.bz2> are stored to F</var/cache/apt/apt-pm/>.
 
-It also fetches L<http://pkg-perl.alioth.debian.org/cpan2deb/CPAN/02packages.dependencies.txt.gz>
+It also fetches L<http://deb.perl.it/debian/cpan-deb/CPAN/02packages.dependencies.txt.gz>
 to be used by C<apt-cpan>.
 
 =head2 clean
@@ -552,7 +552,7 @@ Return all Perl modules and Debian packages C<$module> has as dependency.
 
 =head1 SEE ALSO
 
-L<http://pkg-perl.alioth.debian.org/cpan2deb/>
+L<http://deb.perl.it/>
 
 =head1 AUTHOR
 

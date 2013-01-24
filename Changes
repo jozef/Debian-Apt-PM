@@ -1,6 +1,10 @@
 Revision history for Debian-Apt-PM
 
-0.09
+0.10
+    * Module install instructions included on apt-pm-web
+    * use deb.perl.it instead of pkg-perl.alioth.debian.org (bug reported by Boris Däppen)
+
+0.09    22 Dec 2012
     * add --force-all option for apt-cpan
     * sudo no more default
     * throw an exception when the index is empty or missing
