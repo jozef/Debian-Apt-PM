@@ -34,3 +34,8 @@ li {
     border-top: 1px solid #aaaaaa;
     line-height: 1.3em;
 }
+
+#installCmds {
+    white-space: pre-wrap;
+}
+

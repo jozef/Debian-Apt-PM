@@ -192,13 +192,18 @@ sub module_depends {
 				uniq
 				map { my $deb = $self->find($_->[0], $_->[1]); ($deb->{'min'} ? $deb->{'min'}->{'package'} : $_); }
 				grep {
-					my $module = bless {"ID" => $_->[0]}, 'CPAN::Module';
-					my $inst_module_version = $module->inst_version;
-					(
-						defined $inst_module_version && (CPAN::Version->vcmp($inst_module_version, $_->[1]) >= 0)
-						? 0 || $force_all
-						: 1
-					)
+					if ($force_all) {
+						1;
+					}
+					else {
+						my $module = bless {"ID" => $_->[0]}, 'CPAN::Module';
+						my $inst_module_version = $module->inst_version;
+						(
+							defined $inst_module_version && (CPAN::Version->vcmp($inst_module_version, $_->[1]) >= 0)
+							? 0
+							: 1
+						)
+					}
 				}
 				map { $_->[1] ||= 0; $_; }
 				grep { $_->[0] ne 'perl' }

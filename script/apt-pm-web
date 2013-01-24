@@ -60,6 +60,7 @@ sub main {
 		my ($version, $entry) = (%{$entries->{$module_name}});
 		
 		my %apm_entry = %{$apm->find($module_name) || {}};
+		my ($debs_to_install, $modules_to_install) = $apm->resolve_install_depends(1, $module_name);
 		
 		my $letter_index = lc substr(md5_hex($module_name), 0, 2);
 		$json_buckets{$letter_index}->{$module_name} = {
@@ -77,6 +78,10 @@ sub main {
 				sort { CPAN::Version->vcmp($a, $b) }
 				keys %apm_entry
 			],
+			'install' => {
+				(@$debs_to_install    ? ('debs' => join(' ', @$debs_to_install))    : ()),
+				(@$modules_to_install ? ('cpan' => join(' ', @$modules_to_install)) : ()),
+			},
 		};
 		
 		if ($dependencies) {

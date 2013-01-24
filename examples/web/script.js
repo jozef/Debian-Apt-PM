@@ -86,12 +86,14 @@ cpan2deb.show_module_info = function (module_name, module_info) {
 	var cpan_path_html = 'n/a';
 	var cpan_version   = 'n/a';
 	var debs = [];
-	
+	var install_cmds   = 'n/a';
+
 	if (module_info[module_name]) {
 		cpan_path_html = '<a href="http://search.cpan.org/CPAN/authors/id/'+module_info[module_name].CPAN.path+'">'+module_info[module_name].CPAN.path+'</a>';
 		cpan_version   = module_info[module_name].CPAN.version;
 		module_html    = '<a href="http://search.cpan.org/perldoc?'+encodeURIComponent(module_name)+'">'+module_name+'</a>';
-		
+		install_cmds   = '';
+
 		if (module_info[module_name].Debian.length == 0) {
 			debs = [
 				'This module is not packaged for Debian.<br/>'
@@ -120,11 +122,19 @@ cpan2deb.show_module_info = function (module_name, module_info) {
 				+'</div>'
 			);
 		}
+
+		if (module_info[module_name].install.debs) {
+			install_cmds = install_cmds + 'sudo apt-get install ' + module_info[module_name].install.debs + "\n\n";
+		}
+		if (module_info[module_name].install.cpan) {
+			install_cmds = install_cmds + 'sudo cpan -i ' + module_info[module_name].install.cpan;
+		}
 	}
-	
+
 	$('#cpanModuleName').html(module_html);
 	$('#cpanPath').html(cpan_path_html);
 	$('#cpanVersion').text(cpan_version);
+	$('#installCmds').text(install_cmds);
 
 	$('#debianInfo').html('');
 	for (i in debs) {
