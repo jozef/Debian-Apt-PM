@@ -37,9 +37,10 @@ cpan2deb.module_name = function (new_name) {
 		$('input[name="q"]').val(new_name);
 	}
 	
-	// FIXME trim the val() !!!
 	var q = $('input[name="q"]').val();
 	q = q.replace(/^\s+|\s+$/g, '');
+	q = q.replace(/\//g, '::');
+	q = q.replace(/\.pm$/g, '');
 	return q;
 }
 
