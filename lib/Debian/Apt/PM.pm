@@ -40,6 +40,8 @@ has 'repo_type'             => (is => 'rw', lazy => 1, default => 'deb');
 has 'packages_dependencies' => (is => 'rw', lazy => 1, default => sub { $_[0]->cachedir.'/../02packages.dependencies.txt' });
 has 'packages_dependencies_url'
                             => (is => 'rw', lazy => 1, default => 'http://deb.perl.it/debian/cpan-deb/CPAN/02packages.dependencies.txt.gz');
+has 'packages_dependencies_data'
+                            => (is => 'rw', isa => 'HashRef', lazy => 1, builder => '_build_packages_dependencies_data');
 
 sub find {
 	my $self        = shift;
@@ -166,12 +168,9 @@ sub resolve_install_depends {
 	return (\@debs_to_install, \@modules_to_install);
 }
 
-sub module_depends {
+sub _build_packages_dependencies_data {
 	my $self      = shift;
-	my $module    = shift;
-	my $force_all = shift // 1;
-	my $visited   = shift || {};
-	
+
 	my $packages_file = $self->packages_dependencies;
 	
 	my $packages_file_fh = (
@@ -182,39 +181,54 @@ sub module_depends {
 	while (my $line = <$packages_file_fh>) {
 		last if $line =~ m/^\s*$/;
 	}
+
+	my %module_data;
 	while (my $line = <$packages_file_fh>) {
 		chomp $line;
-		if ($line =~ m{^ $module \s+ [^\s]+ \s+ (.+) $}xms) {
-			my $depends = $1;
-			return
-				if $depends eq 'undef';
-			return
-				uniq
-				map { my $deb = $self->find($_->[0], $_->[1]); ($deb->{'min'} ? $deb->{'min'}->{'package'} : $_); }
-				grep {
-					if ($force_all) {
-						1;
-					}
-					else {
-						my $module = bless {"ID" => $_->[0]}, 'CPAN::Module';
-						my $inst_module_version = $module->inst_version;
-						(
-							defined $inst_module_version && (CPAN::Version->vcmp($inst_module_version, $_->[1]) >= 0)
-							? 0
-							: 1
-						)
-					}
-				}
-				map { $_->[1] ||= 0; $_; }
-				grep { $_->[0] ne 'perl' }
-				map { [ split('/', $_) ] }
-				map { $visited->{$_} = (); $_; }
-				grep { not exists $visited->{$_} }
-				split(/\s+/, $depends)
-			;
-		}
+		next unless ($line =~ m{^ ([^\s]+) \s+ [^\s]+ \s+ (.+) $}xms);
+		my ($module,$depends) = ($1,$2);
+		$module_data{$module} = $depends;
 	}
+
+	return \%module_data;
+}
+
+sub module_depends {
+	my $self      = shift;
+	my $module    = shift;
+	my $force_all = shift // 1;
+	my $visited   = shift || {};
 	
+	my $depends  = $self->packages_dependencies_data->{$module};
+	return unless $depends;
+
+	return
+		if $depends eq 'undef';
+	return
+		uniq
+		map { my $deb = $self->find($_->[0], $_->[1]); ($deb->{'min'} ? $deb->{'min'}->{'package'} : $_); }
+		grep {
+			if ($force_all) {
+				1;
+			}
+			else {
+				my $module = bless {"ID" => $_->[0]}, 'CPAN::Module';
+				my $inst_module_version = $module->inst_version;
+				(
+					defined $inst_module_version && (CPAN::Version->vcmp($inst_module_version, $_->[1]) >= 0)
+					? 0
+					: 1
+				)
+			}
+		}
+		map { $_->[1] ||= 0; $_; }
+		grep { $_->[0] ne 'perl' }
+		map { [ split('/', $_) ] }
+		map { $visited->{$_} = (); $_; }
+		grep { not exists $visited->{$_} }
+		split(/\s+/, $depends)
+	;
+
 	return;
 }
 
