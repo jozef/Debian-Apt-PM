@@ -239,6 +239,16 @@ sub parse_packages {
 					if $filename !~ m/^([^_]+) _ ([^_]+) _ ([^_]+) \.u?deb $/xms;
 				my ($package_name, $version, $arch) = ($1, $2, $3);
 
+				my ($provides) = iterate_as_array(
+					{ workers => 1 },
+					sub {
+						my ($array_id, $data) = @_;
+						my %provides = parse_perlpackages_from_deb($mirror_location, $filename, $pool_url, $cleanup_deb);
+						return $array_id, \%provides;
+					},
+					[1]
+				);
+
 				my $perl_dsc_fh = IO::Any->write([$perl_dsc]);
 				print $perl_dsc_fh 'Package: ', $package, "\n";
 				
@@ -255,17 +265,7 @@ sub parse_packages {
 						: ()
 					),
 				;
-				
-				my ($provides) = iterate_as_array(
-					{ workers => 1 },
-					sub {
-						my ($array_id, $data) = @_;
-						my %provides = parse_perlpackages_from_deb($mirror_location, $filename, $pool_url, $cleanup_deb);
-						return $array_id, \%provides;
-					},
-					[1]
-				);
-				
+
 				my $perl_modules_count = scalar keys %{$provides};
 				if ($perl_modules_count) {
 					print $perl_dsc_fh
