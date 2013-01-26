@@ -202,6 +202,27 @@ sub parse_packages {
 			$distribution = _trim($release->{'Archive'})   || $distribution;
 			$component    = _trim($release->{'Component'}) || $component;
 		}
+
+		my %dsc_cache;
+		if (-f $perlpackages_filename.'.bz2') {
+			my $perlpackages_bz2_fh = IO::Uncompress::Bunzip2->new($perlpackages_filename.'.bz2');
+			while (not $perlpackages_bz2_fh->eof) {
+				my $para = '';
+				while (not $perlpackages_bz2_fh->eof) {
+					my $line = <$perlpackages_bz2_fh>;
+					last if $line =~ m/^\s*$/;
+
+					$para .= $line;
+				}
+
+				next if $para =~ m/^\s*$/;
+
+				my $dhf = Data::Header::Fields->new->decode(\$para);
+				my $filename = _trim($dhf->get_value('Filename'));
+
+				$dsc_cache{$filename} = $para;
+			}
+		}
 		
 		while (not $packages_fh->eof) {
 			my $para = '';
@@ -227,6 +248,12 @@ sub parse_packages {
 			
 			die 'bad "Filename:" - '.$filename.' ('.$package.')'
 				if $filename !~ m/^ (.+) \.u?deb $/xms;
+
+			if (my $dsc_content = delete $dsc_cache{$filename}) {
+				print $perlpackages_fh $dsc_content."\n";
+				next;
+			}
+
 			my $perl_dsc = File::Spec->catfile($mirror_location, $1.'.perl.dsc');
 			my $perl_dsc_dir = dirname($perl_dsc);
 			make_path($perl_dsc_dir) or die 'failed to make_path '.$perl_dsc_dir.' - '.$!
