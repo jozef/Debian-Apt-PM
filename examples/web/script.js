@@ -80,6 +80,7 @@ cpan2deb.searchFinish = function () {
 	$('.load').hide();
 	$('input[type="submit"]').show();
 	$('input[type="search"]').focus();
+	try { piwikTracker.trackPageView(); } catch( err ) {}
 }
 
 cpan2deb.show_module_info = function (module_name, module_info) {

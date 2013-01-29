@@ -58,7 +58,7 @@
 	</script><script type="text/javascript">
 	try {
 	var piwikTracker = Piwik.getTracker(pkBaseURL + "piwik.php", 7);
-	piwikTracker.trackPageView();
+	var q = $.getURLParam("q"); if (!q) { piwikTracker.trackPageView(); }  // needed only when there is no search otherwise done in cpan2deb.searchFinish()
 	piwikTracker.enableLinkTracking();
 	} catch( err ) {}
 	</script><noscript><p><img src="http://stats.meon.eu/piwik.php?idsite=7&amp;rec=1" style="border:0" alt="" /></p></noscript>
