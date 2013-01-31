@@ -90,6 +90,7 @@ cpan2deb.show_module_info = function (module_name, module_info) {
 	var install_cmds   = 'n/a';
 
 	if (module_info[module_name]) {
+		$('input[type="search"]').val('');
 		cpan_path_html = '<a href="http://search.cpan.org/CPAN/authors/id/'+module_info[module_name].CPAN.path+'">'+module_info[module_name].CPAN.path+'</a>';
 		cpan_version   = module_info[module_name].CPAN.version;
 		module_html    = '<a href="http://search.cpan.org/perldoc?'+encodeURIComponent(module_name)+'">'+module_name+'</a>';
