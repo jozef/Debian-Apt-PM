@@ -39,3 +39,6 @@ li {
     white-space: pre-wrap;
 }
 
+.only-when-search {
+    display: none;
+}
