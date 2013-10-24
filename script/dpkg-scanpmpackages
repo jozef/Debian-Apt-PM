@@ -219,8 +219,10 @@ sub parse_packages {
 
 				my $dhf = Data::Header::Fields->new->decode(\$para);
 				my $filename = _trim($dhf->get_value('Filename'));
+				$dhf->set_value('Distribution' => ' '.$distribution);
+				$dhf->set_value('Component'    => ' '.$component);
 
-				$dsc_cache{$filename} = $para;
+				$dsc_cache{$filename} = $dhf->encode;
 			}
 		}
 		
