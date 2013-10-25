@@ -78,18 +78,21 @@ sub update {
 	my $self = shift;
 	
 	my @existing = glob($self->cachedir.'/*.bz2');
+	my @jsons;
 	foreach my $url ($self->_etc_apt_sources) {
 		my $filename = $url;
 		$filename =~ s/[^a-zA-Z0-9\-\.]/_/gxms;
 		$filename = $self->cachedir.'/'.$filename;
 		@existing = grep { $_ ne $filename } @existing;
+		my $json_filename = $filename; $json_filename =~ s/\.bz2$/.json/;
 		if (mirror($url, $filename) == RC_OK) {
-			my $json_filename = $filename; $json_filename =~ s/\.bz2$/.json/;
 			my $content;
 			my $bz_content = IO::Any->slurp($filename);
 			bunzip2 \$bz_content => \$content or die "bunzip2 failed: $Bunzip2Error\n";
 			JSON::Util->encode([$self->_parse_perlpackages_content($content)], $json_filename);
 		}
+		push(@jsons,$json_filename)
+			if -r $filename;
 	}
 	
 	# remove no longer wanted indexes
@@ -101,10 +104,11 @@ sub update {
 	my $index_filename = File::Spec->catfile($self->cachedir, 'all.index');
 	my $aptpm = Debian::Apt::PM->new(
 		cachedir => $self->cachedir,
-		sources  => [ glob($self->cachedir.'/*.json') ],
+		sources  => \@jsons,
 	);
+
 	JSON::Util->encode($aptpm->_create_modules_index, [$index_filename])
-		if (not -f $index_filename) or File::is->older($index_filename, glob($self->cachedir.'/*.json')) or @existing;
+		if (not -f $index_filename) or File::is->older($index_filename, @jsons) or @existing;
 	
 	my $package_dependencies = $self->packages_dependencies;
 	if ($package_dependencies =~ m/\.gz$/) {
@@ -351,9 +355,8 @@ sub _create_modules_index {
 					
 					# will not overwrite if the current package has older Debian version
 					next
-						if version_compare($old_version, $new_version) == -1;
+						if version_compare($old_version, $new_version) < 1;
 				}
-					
 				$modules_index{$module_name}->{$version} =\%deb;
 			}
 		}
