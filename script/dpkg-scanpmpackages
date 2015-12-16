@@ -19,6 +19,7 @@ use Parse::Deb::Control 0.03;
 use List::MoreUtils 'any', 'firstval';
 #use IO::Compress::Bzip2 qw();
 use IO::Uncompress::Bunzip2 qw($Bunzip2Error);
+use IO::Uncompress::Gunzip qw($GunzipError);
 use File::is;
 
 use Carp 'croak';
@@ -172,14 +173,14 @@ sub parse_packages {
 	my @packages_files = 
 		File::Find::Rule
 		->file()
-		->name( 'Packages.bz2' )
+		->name( 'Packages.gz' )
 		->in( $mirror_location )
 	;
 	
 	foreach my $packages_file (@packages_files) {
 		
 		my $perlpackages_filename = $packages_file;
-		$perlpackages_filename =~ s/(Packages).bz2/Perl$1/;
+		$perlpackages_filename =~ s/Packages.gz/PerlPackages/;
 		
 		if ((-f $perlpackages_filename.'.bz2') and File::is->newer($perlpackages_filename.'.bz2', $packages_file)) {
 			print 'skipping ', $packages_file, ' no changes', "\n";
@@ -187,7 +188,7 @@ sub parse_packages {
 		}
 		
 		print 'processing from ', $packages_file, "\n";
-		my $packages_fh     = IO::Uncompress::Bunzip2->new($packages_file);
+		my $packages_fh     = IO::Uncompress::Gunzip->new($packages_file);
 		
 		#my $perlpackages_fh = IO::Compress::Bzip2->new($perlpackages_filename.'.tmp')
 		#	or die $perlpackages_filename.' - '.$!;
@@ -465,7 +466,7 @@ dpkg-scanpmpackages - creates PerlPackages index from .deb files
 
 =head1 DESCRIPTION
 
-Finds all F<Packages.bz2> and for all F<*.deb> files listed there indexes
+Finds all F<Packages.gz> and for all F<*.deb> files listed there indexes
 the Perl modules files F<*.pm> creating F<PerlPackages.bz2> file in the same
 folder.
 
