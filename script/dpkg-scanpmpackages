@@ -269,7 +269,7 @@ sub parse_packages {
 					if $filename !~ m/^([^_]+) _ ([^_]+) _ ([^_]+) \.u?deb $/xms;
 				my ($package_name, $version, $arch) = ($1, $2, $3);
 
-				my ($provides) = iterate_as_array(
+				my ($provides) = eval { iterate_as_array(
 					{ workers => 1 },
 					sub {
 						my ($array_id, $data) = @_;
@@ -277,7 +277,11 @@ sub parse_packages {
 						return $array_id, \%provides;
 					},
 					[1]
-				);
+				) };
+				if ($@) {
+					warn $@;
+					next;
+				}
 
 				my $perl_dsc_fh = IO::Any->write([$perl_dsc]);
 				print $perl_dsc_fh 'Package: ', $package, "\n";
